@@ -39,12 +39,22 @@ const customResult = extractFloorText({
     excludeSelector,
 });
 
+const multiple = messageElement('<div class="mes_text"><content>页面摘要</content></div>');
+const multipleResult = extractFloorText({
+    documentRef: multiple.document,
+    messageElement: multiple.element,
+    rawMessage: '<content>第一段正文</content><aside>装饰内容</aside><content>第二段正文</content>',
+    selectors,
+    excludeSelector,
+});
+
 const checks = {
     rawContentRecovered: recovered === longText,
     collapsedSummaryExcluded: !recovered.includes('8000字+'),
     longContentIntact: recovered.length > 8000,
     renderedContentFallback: renderedResult === '页面里的明确正文',
     customTagSupported: customResult === '自定义标签正文',
+    multipleContentTagsMerged: multipleResult === '第一段正文\n\n第二段正文',
 };
 
 console.log(JSON.stringify({ lengths: { expected: longText.length, recovered: recovered.length }, checks }, null, 2));
