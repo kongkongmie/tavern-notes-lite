@@ -187,7 +187,6 @@ const TEXT_ZH_CN = {
     themeFiles: '主题文件',
     currentTheme: '当前：{name}',
     themeName: '主题名称',
-    mergeTheme: '融合当前酒馆主题',
     themeGuide: '主题制作说明',
     preview: '预览',
     save: '保存',
@@ -324,7 +323,6 @@ const TEXT_ZH_CN = {
     appleThemeNight: '切换到 Apple 夜间',
     appleThemeEnabled: '已切换 Apple Glass 主题。',
     previewTheme: '预览：{name}',
-    tempMergedTheme: '临时融合：{name}',
     unnamedTheme: '未命名主题',
     previewSave: '预览并保存',
     themeCalendar: '日历',
@@ -338,11 +336,9 @@ const TEXT_ZH_CN = {
 variables 控制颜色、圆角、字体、卡片、按钮和笔记样式。
 assets 控制标题图标和背景图；输入栏与摘录按钮使用固定默认图标。
 
-融合当前酒馆主题会读取 SillyTavern 的主题变量，并生成一个临时预览。
-只有点击“预览并保存”或“另存为”才会生成主题文件。`,
+`,
     invalidThemeFile: '这不是酒馆笔记主题文件。',
     previewedTheme: '已预览主题，还没有保存。',
-    mergedThemeDraft: '已生成临时融合预览；点“预览并保存”或“另存为”才会生成主题文件。',
     savedAsTheme: '已另存为新主题。',
     savedTheme: '主题已保存。',
     switchedTheme: '主题已切换。',
@@ -355,8 +351,6 @@ assets 控制标题图标和背景图；输入栏与摘录按钮使用固定默�
     themeNameEmpty: '主题名称不能为空。',
     saveAction: '保存',
     saveAsAction: '另存为',
-    currentTavernTheme: '当前酒馆主题',
-    mergedThemeName: '融合酒馆主题 - {name}',
     confirmDeleteNote: '确定删除这条笔记吗？\n\n{preview}{ellipsis}',
     pasteFontFirst: '先粘贴字体地址或 @import 代码。',
     importedFont: '已导入字体：{name}',
@@ -389,7 +383,6 @@ const TEXTS = {
         themeFiles: '主題檔案',
         currentTheme: '目前：{name}',
         themeName: '主題名稱',
-        mergeTheme: '融合目前酒館主題',
         saveAs: '另存為',
         resetDefault: '恢復預設',
         importFont: '匯入字體',
@@ -484,7 +477,6 @@ const TEXTS = {
         appleThemeNight: '切換到 Apple 夜間',
         appleThemeEnabled: '已切換 Apple Glass 主題。',
         previewTheme: '預覽：{name}',
-        tempMergedTheme: '臨時融合：{name}',
         unnamedTheme: '未命名主題',
         previewSave: '預覽並儲存',
         themeCalendar: '日曆',
@@ -496,11 +488,9 @@ const TEXTS = {
 variables 控制顏色、圓角、字體、卡片、按鈕和筆記樣式。
 assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預設圖示。
 
-融合目前酒館主題會讀取 SillyTavern 的主題變數，並產生一個臨時預覽。
-只有點擊「預覽並儲存」或「另存為」才會產生主題檔案。`,
+`,
         invalidThemeFile: '這不是酒館筆記主題檔案。',
         previewedTheme: '已預覽主題，尚未儲存。',
-        mergedThemeDraft: '已產生臨時融合預覽；點「預覽並儲存」或「另存為」才會產生主題檔案。',
         savedAsTheme: '已另存為新主題。',
         savedTheme: '主題已儲存。',
         switchedTheme: '主題已切換。',
@@ -513,8 +503,6 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         themeNameEmpty: '主題名稱不能為空。',
         saveAction: '儲存',
         saveAsAction: '另存為',
-        currentTavernTheme: '目前酒館主題',
-        mergedThemeName: '融合酒館主題 - {name}',
         confirmDeleteNote: '確定刪除這條筆記嗎？\n\n{preview}{ellipsis}',
         pasteFontFirst: '先貼上字體地址或 @import 代碼。',
         importedFont: '已匯入字體：{name}',
@@ -553,7 +541,6 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         themeFiles: 'Theme Files',
         currentTheme: 'Current: {name}',
         themeName: 'Theme name',
-        mergeTheme: 'Merge current Tavern theme',
         themeGuide: 'Theme guide',
         preview: 'Preview',
         save: 'Save',
@@ -687,7 +674,6 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         appleThemeNight: 'Switch to Apple Night',
         appleThemeEnabled: 'Apple Glass theme switched.',
         previewTheme: 'Preview: {name}',
-        tempMergedTheme: 'Temporary merge: {name}',
         unnamedTheme: 'Untitled theme',
         previewSave: 'Preview & save',
         themeCalendar: 'Calendar',
@@ -699,11 +685,9 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
 variables control colors, radius, fonts, cards, buttons, and note styles.
 assets control the header icon and background image; the input-bar and capture buttons use fixed default icons.
 
-Merge current Tavern theme reads SillyTavern theme variables and creates a temporary preview.
-Click Preview & save or Save as to create a theme file.`,
+`,
         invalidThemeFile: 'This is not a Tavern Notes Lite theme file.',
         previewedTheme: 'Theme previewed. It is not saved yet.',
-        mergedThemeDraft: 'Temporary merged preview created. Use Preview & save or Save as to create a theme file.',
         savedAsTheme: 'Saved as a new theme.',
         savedTheme: 'Theme saved.',
         switchedTheme: 'Theme switched.',
@@ -716,8 +700,6 @@ Click Preview & save or Save as to create a theme file.`,
         themeNameEmpty: 'Theme name cannot be empty.',
         saveAction: 'Save',
         saveAsAction: 'Save as',
-        currentTavernTheme: 'Current Tavern theme',
-        mergedThemeName: 'Merged Tavern theme - {name}',
         confirmDeleteNote: 'Delete this note?\n\n{preview}{ellipsis}',
         pasteFontFirst: 'Paste a font URL or @import code first.',
         importedFont: 'Imported font: {name}',
@@ -756,7 +738,6 @@ Click Preview & save or Save as to create a theme file.`,
         themeFiles: '테마 파일',
         currentTheme: '현재: {name}',
         themeName: '테마 이름',
-        mergeTheme: '현재 술집 테마 병합',
         themeGuide: '테마 제작 설명',
         preview: '미리보기',
         save: '저장',
@@ -880,7 +861,6 @@ Click Preview & save or Save as to create a theme file.`,
         openThemeFolder: '테마 폴더 열기',
         deleteTheme: '테마 삭제',
         previewTheme: '미리보기: {name}',
-        tempMergedTheme: '임시 병합: {name}',
         unnamedTheme: '이름 없는 테마',
         previewSave: '미리보기 후 저장',
         themeCalendar: '캘린더',
@@ -892,11 +872,9 @@ Click Preview & save or Save as to create a theme file.`,
 variables는 색상, 둥근 모서리, 글꼴, 카드, 버튼, 노트 스타일을 제어합니다.
 assets는 제목 아이콘과 배경 이미지를 제어합니다. 입력창과 발췌 버튼은 고정 기본 아이콘을 사용합니다.
 
-현재 술집 테마 병합은 SillyTavern 테마 변수를 읽어 임시 미리보기를 만듭니다.
-미리보기 후 저장 또는 다른 이름으로 저장을 눌러야 테마 파일이 생성됩니다.`,
+`,
         invalidThemeFile: '술집 노트 테마 파일이 아닙니다.',
         previewedTheme: '테마를 미리보았습니다. 아직 저장되지 않았습니다.',
-        mergedThemeDraft: '임시 병합 미리보기를 만들었습니다. 미리보기 후 저장 또는 다른 이름으로 저장을 눌러 테마 파일을 만드세요.',
         savedAsTheme: '새 테마로 저장했습니다.',
         savedTheme: '테마를 저장했습니다.',
         switchedTheme: '테마를 전환했습니다.',
@@ -909,8 +887,6 @@ assets는 제목 아이콘과 배경 이미지를 제어합니다. 입력창과 
         themeNameEmpty: '테마 이름은 비워둘 수 없습니다.',
         saveAction: '저장',
         saveAsAction: '다른 이름으로 저장',
-        currentTavernTheme: '현재 술집 테마',
-        mergedThemeName: '병합한 술집 테마 - {name}',
         confirmDeleteNote: '이 노트를 삭제할까요?\n\n{preview}{ellipsis}',
         pasteFontFirst: '먼저 글꼴 주소나 @import 코드를 붙여 넣으세요.',
         importedFont: '글꼴을 가져왔습니다: {name}',
@@ -1143,37 +1119,6 @@ const APPLE_GLASS_NIGHT_VARIABLES = {
     '--tnl-note-accent-excerpt': '#30d158',
     '--tnl-inset-light': 'rgba(255, 255, 255, 0.10)',
 };
-
-const THEME_GUIDE = `主题文件说明
-
-主题 JSON 由 variables 和 assets 两部分组成。
-
-variables 分区：
-1. 基础颜色：--tnl-paper / --tnl-paper-2 / --tnl-ink / --tnl-muted / --tnl-line / --tnl-gold
-2. 全局形状：--tnl-radius-panel / --tnl-radius-card / --tnl-font-family
-3. 控件卡片：--tnl-control-* / --tnl-card-* / --tnl-icon-bg / --tnl-action-bg
-4. 文本语义：--tnl-em / --tnl-underline / --tnl-quote / --tnl-text-shadow
-5. 小按钮：--tnl-mini-button-* / --tnl-inline-action-* / --tnl-inline-icon-*
-6. 笔记卡：--tnl-note-* / --tnl-note-type-* / --tnl-note-accent-*
-
-assets 分区：
-brandIcon 控制面板标题图标。
-输入栏上的酒馆笔记图标和摘录按钮图标为固定默认图标，不随主题变化。
-backgroundImage 可填空、url(...) 或 CSS 渐变。
-
-融合当前酒馆主题时读取的 SillyTavern 变量：
---SmartThemeBodyColor -> 主文字与 --tnl-ink
---SmartThemeEmColor -> 斜体/弱强调文字
---SmartThemeUnderlineColor -> 下划线语义色
---SmartThemeQuoteColor -> 引用色、强调色、滚动条
---SmartThemeShadowColor -> 阴影参考色
---SmartThemeChatTintColor -> 笔记卡/聊天内容背景
---SmartThemeBlurTintColor -> 面板/UI 背景
---SmartThemeBorderColor -> 边框与分割线
---SmartThemeUserMesBlurTintColor -> User 输入标签与强调
---SmartThemeBotMesBlurTintColor -> 摘抄标签与强调
-
-融合主题是临时预览，只有点击保存或另存为才会生成主题文件。`;
 
 function getCurrentCharacter() {
     const character = characters?.[this_chid] || {};
@@ -2526,7 +2471,6 @@ function buildPanel() {
                         <button id="tavern-notes-lite-theme-delete" class="tnl-theme-icon-button" title="${htmlEscape(t('deleteTheme'))}" aria-label="${htmlEscape(t('deleteTheme'))}"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                     <input id="tavern-notes-lite-theme-name-input" class="tnl-theme-input" type="text" placeholder="${htmlEscape(t('themeName'))}" />
-                    <button id="tavern-notes-lite-theme-merge-st" class="tnl-theme-merge-button"><i class="fa-solid fa-wand-magic-sparkles"></i><span>${htmlEscape(t('mergeTheme'))}</span></button>
                     <div class="tnl-theme-actions">
                         <button id="tavern-notes-lite-theme-preview-save" class="tnl-export-choice"><i class="fa-solid fa-eye"></i><span>${htmlEscape(t('previewSave'))}</span></button>
                         <button id="tavern-notes-lite-theme-save-as" class="tnl-export-choice"><i class="fa-solid fa-copy"></i><span>${htmlEscape(t('saveAs'))}</span></button>
@@ -2690,9 +2634,6 @@ function bindEvents() {
     });
     document.querySelector('#tavern-notes-lite-theme-export')?.addEventListener('click', exportTheme);
     document.querySelector('#tavern-notes-lite-theme-preview-save')?.addEventListener('click', () => previewAndSaveThemeFromEditor().catch(error => notify(error.message, 'error')));
-    document.querySelector('#tavern-notes-lite-theme-merge-st')?.addEventListener('click', () => {
-        mergeCurrentSillyTavernTheme().catch(error => notify(error.message, 'error'));
-    });
     document.querySelector('#tavern-notes-lite-theme-save-as')?.addEventListener('click', () => saveThemeAsFromEditor().catch(error => notify(error.message, 'error')));
     document.querySelector('#tavern-notes-lite-theme-import')?.addEventListener('click', () => document.querySelector('#tavern-notes-lite-theme-file')?.click());
     document.querySelector('#tavern-notes-lite-theme-delete')?.addEventListener('click', () => deleteSelectedTheme().catch(error => notify(error.message, 'error')));
@@ -4104,264 +4045,6 @@ function getThemeFromEditor() {
     return normalizeTheme(theme);
 }
 
-function firstElement(selectors) {
-    for (const selector of selectors) {
-        const element = document.querySelector(selector);
-        if (element) return element;
-    }
-    return null;
-}
-
-function styleOf(selectors) {
-    const element = Array.isArray(selectors) ? firstElement(selectors) : document.querySelector(selectors);
-    return element ? getComputedStyle(element) : null;
-}
-
-function usefulColor(value) {
-    if (!value || value === 'transparent') return '';
-    const text = String(value).trim();
-    if (/^\d+(\.\d+)?\s*,\s*\d+(\.\d+)?\s*,\s*\d+(\.\d+)?/.test(text)) return `rgb(${text})`;
-    if (/rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)/i.test(value)) return '';
-    return text;
-}
-
-function cssVar(styles, name) {
-    return usefulColor(styles?.getPropertyValue(name)?.trim());
-}
-
-function parseRgb(value) {
-    const text = String(value || '').trim();
-    const rgb = text.match(/rgba?\(([^)]+)\)/i);
-    if (rgb) {
-        const parts = rgb[1].split(',').map(part => Number.parseFloat(part));
-        if (parts.length >= 3) return parts.slice(0, 3);
-    }
-    const hex = text.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-    if (hex) {
-        const raw = hex[1].length === 3 ? hex[1].split('').map(char => char + char).join('') : hex[1];
-        return [0, 2, 4].map(index => Number.parseInt(raw.slice(index, index + 2), 16));
-    }
-    return null;
-}
-
-function toOpaqueColor(value, fallback = '#111522') {
-    const rgb = parseRgb(value);
-    if (!rgb) return fallback;
-    return `rgb(${rgb.map(channel => Math.max(0, Math.min(255, Math.round(channel)))).join(', ')})`;
-}
-
-function isDarkColor(value) {
-    const rgb = parseRgb(value);
-    if (!rgb) return false;
-    const [r, g, b] = rgb.map(channel => {
-        const normalized = channel / 255;
-        return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
-    });
-    return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 0.35;
-}
-
-function pickStyleValue(styles, property, fallback = '') {
-    for (const style of styles) {
-        const value = usefulColor(style?.getPropertyValue(property)?.trim());
-        if (value) return value;
-    }
-    return fallback;
-}
-
-function pickBackgroundColor(styles, fallback = DEFAULT_THEME.variables['--tnl-paper']) {
-    return pickStyleValue(styles, 'background-color', fallback);
-}
-
-function pickBackgroundImage(styles, fallback = '') {
-    const image = pickStyleValue(styles, 'background-image', fallback);
-    return image === 'none' ? fallback : image;
-}
-
-function colorMix(color, alpha = 0.3) {
-    const value = usefulColor(color);
-    if (!value) return `rgba(156, 151, 139, ${alpha})`;
-    if (value.startsWith('rgb(')) return value.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
-    if (value.startsWith('rgba(')) return value.replace(/,\s*[\d.]+\)$/, `, ${alpha})`);
-    return value;
-}
-
-function shadowColor(value, fallbackColor) {
-    const shadow = String(value || '');
-    const rgba = shadow.match(/rgba?\([^)]+\)/i)?.[0];
-    return colorMix(rgba || fallbackColor, 0.38);
-}
-
-function getSillyTavernThemeName() {
-    const select = document.querySelector('#themes');
-    const selected = select?.selectedOptions?.[0];
-    const name = selected?.textContent?.trim() || select?.value?.trim() || '';
-    return name || t('currentTavernTheme');
-}
-
-function extractCurrentSillyTavernTheme() {
-    const body = getComputedStyle(document.body);
-    const root = getComputedStyle(document.documentElement);
-    const chatBlock = styleOf(['.mes', '.mes_block', '#chat .mes']);
-    const chatText = styleOf(['.mes_text', '.mes .mes_text', '#chat']);
-    const input = styleOf(['#send_textarea', '#send_form textarea', '#send_form']);
-    const menu = styleOf(['#user-settings-block', '#left-nav-panel', '.drawer-content', '.popup']);
-    const button = styleOf(['.menu_button', '.qr--button', '#send_but']);
-    const active = styleOf(['.selected', '.active', '.mes.selected', '.menu_button:hover']);
-    const styles = [chatBlock, input, menu, body, root].filter(Boolean);
-    const textStyles = [chatText, input, menu, body, root].filter(Boolean);
-    const bodyText = toOpaqueColor(cssVar(root, '--SmartThemeBodyColor') || pickStyleValue(textStyles, 'color', DEFAULT_THEME.variables['--tnl-ink']), DEFAULT_THEME.variables['--tnl-ink']);
-    const border = toOpaqueColor(cssVar(root, '--SmartThemeBorderColor') || pickStyleValue([input, button, menu, root], 'border-color', DEFAULT_THEME.variables['--tnl-line']), DEFAULT_THEME.variables['--tnl-line']);
-    const quote = toOpaqueColor(cssVar(root, '--SmartThemeQuoteColor') || pickStyleValue([active, button, root, body], 'color', DEFAULT_THEME.variables['--tnl-gold']), DEFAULT_THEME.variables['--tnl-gold']);
-    const em = toOpaqueColor(cssVar(root, '--SmartThemeEmColor') || bodyText, bodyText);
-    const underline = toOpaqueColor(cssVar(root, '--SmartThemeUnderlineColor') || quote, quote);
-    const userTint = toOpaqueColor(cssVar(root, '--SmartThemeUserMesBlurTintColor') || quote, quote);
-    const chatTint = cssVar(root, '--SmartThemeChatTintColor') || cssVar(root, '--SmartThemeBlurTintColor');
-    const uiBackground = cssVar(root, '--SmartThemeBlurTintColor') || cssVar(root, '--SmartThemeChatTintColor');
-    const panelBackground = uiBackground || pickBackgroundColor([menu, input, body, root], DEFAULT_THEME.variables['--tnl-paper']);
-    const cardBackground = chatTint || uiBackground || pickBackgroundColor([chatBlock, input, menu, body], DEFAULT_THEME.variables['--tnl-paper-2']);
-    const botTint = toOpaqueColor(cssVar(root, '--SmartThemeBotMesBlurTintColor') || cardBackground || quote, quote);
-    const panelSolid = toOpaqueColor(panelBackground, DEFAULT_THEME.variables['--tnl-paper']);
-    const cardSolid = toOpaqueColor(cardBackground, panelSolid);
-    const inputSolid = toOpaqueColor(pickBackgroundColor([input, menu, body], panelSolid), panelSolid);
-    const shadow = pickStyleValue([chatBlock, input, button, menu], 'box-shadow', '');
-    const isDark = isDarkColor(panelBackground) || isDarkColor(cardBackground);
-    const lightGlow = isDark ? colorMix(quote, 0.18) : 'rgba(255, 255, 255, 0.76)';
-    const textShadow = usefulColor(cssVar(root, '--SmartThemeShadowColor')) || 'transparent';
-    const themeShadow = toOpaqueColor(cssVar(root, '--SmartThemeShadowColor') || shadowColor(shadow, '#000000'), '#000000');
-    const muted = `color-mix(in srgb, ${bodyText} ${isDark ? '68%' : '62%'}, ${panelSolid} ${isDark ? '32%' : '38%'})`;
-    const softBorder = `color-mix(in srgb, ${border} ${isDark ? '82%' : '52%'}, transparent)`;
-    const glow = `color-mix(in srgb, ${quote} ${isDark ? '16%' : '24%'}, transparent)`;
-    const darkShadow = isDark
-        ? colorMix(themeShadow, 0.5)
-        : shadowColor(shadow, pickStyleValue(styles, 'color', '#4c4a44'));
-    const buttonBase = isDark
-        ? `color-mix(in srgb, ${cardSolid} 88%, ${border} 12%)`
-        : `color-mix(in srgb, ${inputSolid} 84%, white 16%)`;
-    const darkButton = `color-mix(in srgb, ${cardSolid} 90%, black 10%)`;
-    const darkButtonHover = `color-mix(in srgb, ${quote} 16%, ${darkButton} 84%)`;
-    const darkButtonShadow = `0 0 0 1px ${softBorder}, 0 3px 10px ${colorMix(themeShadow, 0.42)}, inset 0 1px 0 color-mix(in srgb, ${bodyText} 12%, transparent)`;
-    const darkIconBg = `linear-gradient(145deg, color-mix(in srgb, ${quote} 8%, ${darkButton} 92%), color-mix(in srgb, ${darkButton} 84%, black 16%))`;
-    const darkIconShadow = `0 0 0 1px color-mix(in srgb, ${border} 68%, transparent), 0 2px 6px ${colorMix(themeShadow, 0.34)}, inset 0 1px 0 color-mix(in srgb, ${bodyText} 12%, transparent)`;
-    const paperLift = isDark
-        ? `color-mix(in srgb, ${panelSolid} 92%, black 8%)`
-        : `color-mix(in srgb, ${panelSolid} 94%, white 6%)`;
-    const cardLift = isDark
-        ? `color-mix(in srgb, ${cardSolid} 94%, black 6%)`
-        : `color-mix(in srgb, ${cardSolid} 90%, white 10%)`;
-    const themeName = getSillyTavernThemeName();
-
-    const theme = normalizeTheme({
-        name: t('mergedThemeName', { name: themeName }),
-        author: 'Tavern Notes Lite',
-        variables: {
-            '--tnl-paper': panelSolid,
-            '--tnl-paper-2': cardSolid,
-            '--tnl-ink': bodyText,
-            '--tnl-muted': muted,
-            '--tnl-line': softBorder,
-            '--tnl-gold': quote,
-            '--tnl-gold-2': quote,
-            '--tnl-em': em,
-            '--tnl-underline': underline,
-            '--tnl-quote': quote,
-            '--tnl-text-shadow': textShadow,
-            '--tnl-panel-glow': glow,
-            '--tnl-scrollbar-thumb': quote,
-            '--tnl-scrollbar-track': `color-mix(in srgb, ${border} 24%, ${panelSolid} 76%)`,
-            '--tnl-mini-button-bg': `linear-gradient(145deg, ${buttonBase}, ${paperLift})`,
-            '--tnl-mini-button-shadow': isDark
-                ? darkButtonShadow
-                : DEFAULT_THEME.variables['--tnl-mini-button-shadow'],
-            '--tnl-mini-button-hover-bg': `linear-gradient(145deg, color-mix(in srgb, ${quote} ${isDark ? '24%' : '28%'}, ${buttonBase}), ${buttonBase})`,
-            '--tnl-mini-button-hover-shadow': isDark
-                ? `0 0 0 1px color-mix(in srgb, ${quote} 42%, transparent), 0 4px 12px ${colorMix(themeShadow, 0.42)}, inset 0 1px 0 color-mix(in srgb, ${bodyText} 16%, transparent)`
-                : DEFAULT_THEME.variables['--tnl-mini-button-hover-shadow'],
-            '--tnl-filter-hover-shadow': isDark
-                ? `0 0 0 1px color-mix(in srgb, ${border} 70%, transparent), 0 5px 13px ${colorMix(themeShadow, 0.36)}`
-                : DEFAULT_THEME.variables['--tnl-filter-hover-shadow'],
-            '--tnl-filter-icon-border': isDark ? `color-mix(in srgb, ${border} 72%, transparent)` : DEFAULT_THEME.variables['--tnl-filter-icon-border'],
-            '--tnl-filter-icon-shadow': isDark ? darkIconShadow : DEFAULT_THEME.variables['--tnl-filter-icon-shadow'],
-            '--tnl-inline-action-bg': isDark ? darkButton : DEFAULT_THEME.variables['--tnl-inline-action-bg'],
-            '--tnl-inline-action-hover-bg': isDark ? darkButtonHover : DEFAULT_THEME.variables['--tnl-inline-action-hover-bg'],
-            '--tnl-inline-action-shadow': isDark ? 'none' : DEFAULT_THEME.variables['--tnl-inline-action-shadow'],
-            '--tnl-inline-action-hover-shadow': isDark
-                ? `inset 0 0 0 1px color-mix(in srgb, ${quote} 36%, transparent), inset 0 1px 0 color-mix(in srgb, ${bodyText} 12%, transparent)`
-                : DEFAULT_THEME.variables['--tnl-inline-action-hover-shadow'],
-            '--tnl-inline-icon-bg': isDark ? darkIconBg : DEFAULT_THEME.variables['--tnl-inline-icon-bg'],
-            '--tnl-inline-icon-hover-bg': isDark ? `linear-gradient(145deg, color-mix(in srgb, ${quote} 22%, ${darkButton} 78%), ${darkButton})` : DEFAULT_THEME.variables['--tnl-inline-icon-hover-bg'],
-            '--tnl-inline-icon-shadow': isDark ? darkIconShadow : DEFAULT_THEME.variables['--tnl-inline-icon-shadow'],
-            '--tnl-shadow-dark': darkShadow,
-            '--tnl-shadow-light': lightGlow,
-            '--tnl-radius-panel': '24px',
-            '--tnl-radius-card': isDark ? '13px' : DEFAULT_THEME.variables['--tnl-radius-card'],
-            '--tnl-panel-border': border,
-            '--tnl-control-bg': `linear-gradient(145deg, ${buttonBase}, ${paperLift})`,
-            '--tnl-control-bg-hover': `linear-gradient(145deg, color-mix(in srgb, ${quote} ${isDark ? '22%' : '30%'}, ${buttonBase}), ${buttonBase})`,
-            '--tnl-control-inset-bg': `linear-gradient(145deg, color-mix(in srgb, ${panelSolid} ${isDark ? '90%' : '88%'}, ${isDark ? 'black' : 'white'} ${isDark ? '10%' : '12%'}), color-mix(in srgb, ${cardSolid} ${isDark ? '86%' : '88%'}, ${isDark ? 'black' : 'white'} ${isDark ? '14%' : '12%'}))`,
-            '--tnl-control-inset-shadow': isDark
-                ? `inset 0 0 0 1px color-mix(in srgb, ${border} 54%, transparent), inset 0 8px 16px ${colorMix(themeShadow, 0.36)}`
-                : DEFAULT_THEME.variables['--tnl-control-inset-shadow'],
-            '--tnl-card-bg': `linear-gradient(145deg, ${cardLift}, ${paperLift})`,
-            '--tnl-card-bg-active': `linear-gradient(145deg, color-mix(in srgb, ${quote} ${isDark ? '18%' : '24%'}, ${cardLift}), ${cardLift})`,
-            '--tnl-card-active-shadow': isDark
-                ? `inset 0 0 0 1px color-mix(in srgb, ${quote} 28%, transparent), inset 0 8px 14px ${colorMix(themeShadow, 0.3)}`
-                : DEFAULT_THEME.variables['--tnl-card-active-shadow'],
-            '--tnl-icon-bg': isDark ? darkIconBg : `linear-gradient(145deg, color-mix(in srgb, ${quote} 16%, ${buttonBase}), ${paperLift})`,
-            '--tnl-action-bg': `linear-gradient(145deg, ${paperLift}, ${cardLift})`,
-            '--tnl-overlay-bg': `color-mix(in srgb, ${panelSolid} 94%, ${isDark ? 'black' : 'white'} 6%)`,
-            '--tnl-fade-bg': `linear-gradient(90deg, color-mix(in srgb, ${cardSolid} 0%, transparent), ${cardSolid} 34%, color-mix(in srgb, ${quote} ${isDark ? '34%' : '18%'}, ${cardSolid}))`,
-            '--tnl-card-image': 'linear-gradient(transparent, transparent)',
-            '--tnl-note-bg': `linear-gradient(145deg, ${paperLift}, ${cardLift})`,
-            '--tnl-note-border': `1px solid ${softBorder}`,
-            '--tnl-note-shadow': isDark
-                ? `0 0 0 1px color-mix(in srgb, ${quote} 18%, transparent), 0 8px 24px ${colorMix(themeShadow, 0.5)}`
-                : DEFAULT_THEME.variables['--tnl-note-shadow'],
-            '--tnl-note-type-bg': isDark
-                ? `linear-gradient(145deg, color-mix(in srgb, ${userTint} 62%, ${quote} 38%), color-mix(in srgb, ${userTint} 72%, black 28%))`
-                : `linear-gradient(145deg, color-mix(in srgb, ${userTint} 34%, white 66%), color-mix(in srgb, ${quote} 18%, white 82%))`,
-            '--tnl-note-type-color': isDark
-                ? `color-mix(in srgb, ${bodyText} 82%, ${userTint} 18%)`
-                : `color-mix(in srgb, ${quote} 82%, black 18%)`,
-            '--tnl-note-type-user-bg': isDark
-                ? `linear-gradient(145deg, color-mix(in srgb, ${userTint} 58%, ${cardSolid} 42%), color-mix(in srgb, ${userTint} 28%, ${panelSolid} 72%))`
-                : `linear-gradient(145deg, color-mix(in srgb, ${userTint} 32%, white 68%), color-mix(in srgb, ${quote} 16%, white 84%))`,
-            '--tnl-note-type-user-color': isDark
-                ? `color-mix(in srgb, ${bodyText} 88%, ${userTint} 12%)`
-                : `color-mix(in srgb, ${quote} 78%, black 22%)`,
-            '--tnl-note-type-excerpt-bg': isDark
-                ? `linear-gradient(145deg, color-mix(in srgb, ${botTint} 52%, ${cardSolid} 48%), color-mix(in srgb, ${botTint} 22%, ${panelSolid} 78%))`
-                : `linear-gradient(145deg, color-mix(in srgb, ${botTint} 32%, white 68%), color-mix(in srgb, ${border} 16%, white 84%))`,
-            '--tnl-note-type-excerpt-color': isDark
-                ? `color-mix(in srgb, ${bodyText} 84%, ${botTint} 16%)`
-                : `color-mix(in srgb, ${border} 76%, black 24%)`,
-            '--tnl-note-accent-user': userTint,
-            '--tnl-note-accent-excerpt': botTint,
-            '--tnl-note-padding': isDark ? '15px 17px 15px' : DEFAULT_THEME.variables['--tnl-note-padding'],
-            '--tnl-note-topline-bg': isDark
-                ? `linear-gradient(135deg, color-mix(in srgb, ${userTint} 12%, ${cardSolid} 88%), color-mix(in srgb, ${botTint} 8%, ${panelSolid} 92%))`
-                : DEFAULT_THEME.variables['--tnl-note-topline-bg'],
-            '--tnl-note-topline-border': isDark ? `1px solid ${softBorder}` : DEFAULT_THEME.variables['--tnl-note-topline-border'],
-            '--tnl-note-topline-padding': isDark ? '8px 12px' : DEFAULT_THEME.variables['--tnl-note-topline-padding'],
-            '--tnl-note-topline-radius': isDark ? '10px' : DEFAULT_THEME.variables['--tnl-note-topline-radius'],
-            '--tnl-note-topline-margin': isDark ? '0 0 13px 0' : DEFAULT_THEME.variables['--tnl-note-topline-margin'],
-            '--tnl-note-dot-display': isDark ? 'none' : DEFAULT_THEME.variables['--tnl-note-dot-display'],
-            '--tnl-filter-shadow': isDark
-                ? `0 0 0 1px ${softBorder}, 0 6px 16px ${colorMix(themeShadow, 0.38)}`
-                : DEFAULT_THEME.variables['--tnl-filter-shadow'],
-            '--tnl-control-shadow': isDark
-                ? `0 0 0 1px ${softBorder}, 0 5px 14px ${colorMix(themeShadow, 0.38)}`
-                : DEFAULT_THEME.variables['--tnl-control-shadow'],
-            '--tnl-inset-light': isDark ? `color-mix(in srgb, ${quote} 16%, transparent)` : DEFAULT_THEME.variables['--tnl-inset-light'],
-            '--tnl-font-family': DEFAULT_THEME.variables['--tnl-font-family'],
-        },
-        assets: {
-            ...DEFAULT_THEME.assets,
-            backgroundImage: '',
-        },
-    });
-    return theme;
-}
-
 function previewThemeFromEditor() {
     applyTheme(getThemeFromEditor(), { commit: false, syncEditor: false, labelKey: 'previewTheme' });
     notify(t('previewedTheme'), 'success');
@@ -4371,23 +4054,6 @@ async function previewAndSaveThemeFromEditor() {
     const theme = getThemeFromEditor();
     applyTheme(theme, { commit: false, syncEditor: false, labelKey: 'previewTheme' });
     await saveThemeFromEditor(theme);
-}
-
-async function mergeCurrentSillyTavernTheme() {
-    const theme = extractCurrentSillyTavernTheme();
-    const stamp = new Date().toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }).replace(/[\/:\s]/g, '-');
-    theme.name = `${theme.name} - ${stamp}`;
-    state.themeDraft = true;
-    syncThemeEditor(theme);
-    applyTheme(theme, { commit: false, syncEditor: false, labelKey: 'tempMergedTheme' });
-    notify(t('mergedThemeDraft'), 'success');
 }
 
 function askThemeName(theme, actionLabel) {

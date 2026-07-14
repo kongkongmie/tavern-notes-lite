@@ -2627,33 +2627,6 @@
     border-radius: 999px;
 }
 
-.tnl-theme-merge-button {
-    width: 100%;
-    min-height: 36px;
-    margin: 0 0 10px;
-    border: 1px solid color-mix(in srgb, var(--tnl-line) 72%, transparent);
-    border-radius: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    color: var(--tnl-ink);
-    cursor: pointer;
-    background: var(--tnl-mini-button-bg);
-    box-shadow: var(--tnl-mini-button-shadow);
-}
-
-.tnl-theme-merge-button:hover {
-    color: var(--tnl-quote);
-    border-color: var(--tnl-quote);
-    background: var(--tnl-mini-button-hover-bg);
-    box-shadow: var(--tnl-mini-button-hover-shadow);
-}
-
-.tnl-theme-merge-button i {
-    color: var(--tnl-quote);
-}
-
 .tnl-theme-guide {
     margin: 0 0 10px;
     border: 1px solid color-mix(in srgb, var(--tnl-line) 72%, transparent);
