@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Tavern Notes Lite storage smoke test</title>
+<style>
+  body { font: 18px/1.5 system-ui; padding: 40px; color: #17271f; background: #eef7f2; }
+  pre { white-space: pre-wrap; padding: 24px; background: white; border: 1px solid #8aa797; }
+</style>
+<h1>Storage smoke test</h1>
+<pre id="result">RUNNING</pre>
+<script type="module">
+  const output = document.querySelector('#result');
+  output.textContent = 'STARTED';
+  try {
+    const storage = await Promise.race([
+      import('../storage.js'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('storage.js import timed out')), 5000)),
+    ]);
+    const backup = {
+      format: 'tavern-notes-export',
+      version: 1,
+      notes: [
+        { id: 'full-1', seq: 1, type: 'excerpt', content: 'alpha excerpt', createdAt: '2026-07-14T01:00:00.000Z', character: { id: 1, name: 'Alpha' }, chat: { id: 'chat-a', messageId: 3 } },
+        { id: 'full-2', seq: 2, type: 'user_input', content: 'first draft', createdAt: '2026-07-14T01:01:00.000Z', character: { id: 1, name: 'Alpha' }, chat: { id: 'chat-a', messageId: 4 } },
+        { id: 'full-3', seq: 3, type: 'user_input', content: 'second draft', createdAt: '2026-07-14T01:02:00.000Z', character: { id: 1, name: 'Alpha' }, chat: { id: 'chat-a', messageId: 4 } },
+      ],
+    };
+    const first = await storage.importLiteExport(backup);
+    const duplicate = await storage.importLiteExport(backup);
+    const list = await storage.liteApi('/notes?limit=15&offset=0');
+    const characters = await storage.liteApi('/characters');
+    const exported = await storage.getLiteExport('smoke-user');
+    const info = await storage.getLiteStorageInfo();
+    const checks = {
+      firstImport: first.imported === 3,
+      duplicateSkipped: duplicate.imported === 0 && duplicate.skipped === 3,
+      variantsGrouped: list.totalNotes === 2 && list.notes.some(note => note.variantCount === 2),
+      characterSummary: characters.characters.length === 1 && characters.characters[0].name === 'Alpha',
+      compatibleExport: exported.format === 'tavern-notes-export' && exported.notes.length === 3,
+      storageCount: info.count === 3 && info.approximateBytes > 0,
+    };
+    const passed = Object.values(checks).every(Boolean);
+    output.textContent = `${passed ? 'PASS' : 'FAIL'}\n${JSON.stringify({ first, duplicate, checks }, null, 2)}`;
+    document.body.dataset.result = passed ? 'pass' : 'fail';
+  } catch (error) {
+    output.textContent = `FAIL\n${error.stack || error.message}`;
+    document.body.dataset.result = 'fail';
+  }
+</script>

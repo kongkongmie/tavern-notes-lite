@@ -1,0 +1,12 @@
+{
+  "display_name": "酒馆笔记 Lite / Tavern Notes Lite",
+  "loading_order": 102,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "KKM & Codex",
+  "version": "0.1.0",
+  "homePage": "https://github.com/kongkongmie/tavern-notes-lite",
+  "auto_update": true
+}
