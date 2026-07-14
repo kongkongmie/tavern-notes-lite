@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test:storage": "node tests/storage-node-smoke.mjs",
-    "test:floor": "node tests/floor-capture-node-smoke.mjs"
+    "test:floor": "node tests/floor-capture-node-smoke.mjs",
+    "test:theme": "node tests/theme-compat-node-smoke.mjs"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.4",

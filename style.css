@@ -2703,6 +2703,34 @@
     color: var(--tnl-quote);
 }
 
+.tnl-lite-full-info {
+    margin-top: 14px;
+    padding: 14px 15px;
+    border: 1px solid color-mix(in srgb, var(--tnl-line) 64%, transparent);
+    border-radius: 18px;
+    color: var(--tnl-muted);
+    background: color-mix(in srgb, var(--tnl-paper-2) 72%, transparent);
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.tnl-lite-full-info strong {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 8px;
+    color: var(--tnl-ink);
+    font-size: 12px;
+}
+
+.tnl-lite-full-info strong i {
+    color: var(--tnl-quote);
+}
+
+.tnl-lite-full-info p {
+    margin: 6px 0 0;
+}
+
 @media (max-width: 980px) {
     #tavern-notes-lite-panel {
         left: 8px;
