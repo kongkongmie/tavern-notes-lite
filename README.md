@@ -11,7 +11,11 @@
 
 ## 安装
 
-在 SillyTavern 的“安装扩展”中粘贴 Lite 仓库地址。安装后刷新页面即可使用，不需要运行 BAT、SH 或安装 Server Plugin。
+在 SillyTavern 的“安装扩展”中粘贴：
+
+`https://github.com/kongkongmie/tavern-notes-lite`
+
+安装后刷新页面即可使用，不需要运行 BAT、SH 或安装 Server Plugin。以后有新版本时，直接在 SillyTavern 的扩展面板中更新。
 
 ## 数据提醒
 

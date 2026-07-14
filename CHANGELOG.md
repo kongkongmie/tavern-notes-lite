@@ -8,3 +8,4 @@
 - Supports JSON import/export compatible with Tavern Notes Full and clean TXT export.
 - Adds browser storage and backup reminders without automatic deletion.
 - Pauses automatically when Tavern Notes Full is active.
+- Includes Soft Neomorphism and Apple Glass themes, plus imported Tavern Notes theme compatibility.
