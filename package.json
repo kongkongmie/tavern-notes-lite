@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:storage": "node tests/storage-node-smoke.mjs"
+    "test:storage": "node tests/storage-node-smoke.mjs",
+    "test:floor": "node tests/floor-capture-node-smoke.mjs"
   },
   "devDependencies": {
-    "fake-indexeddb": "^6.2.4"
+    "fake-indexeddb": "^6.2.4",
+    "linkedom": "^0.18.12"
   }
 }

@@ -9,6 +9,7 @@ import {
     this_chid,
     user_avatar,
 } from '../../../../script.js';
+import { extractFloorText } from './floor-capture.js';
 import {
     getAllLiteNotes,
     getLiteExport,
@@ -1996,16 +1997,6 @@ function htmlToPlainText(value) {
     return element.innerText || element.textContent || '';
 }
 
-function normalizeCapturedFloorText(value) {
-    return String(value || '')
-        .replace(/\u00a0/g, ' ')
-        .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean)
-        .join('\n')
-        .trim();
-}
-
 function getFloorCaptureSelectors() {
     const selectors = String(state.floorCaptureSelector || DEFAULT_FLOOR_CAPTURE_SELECTOR)
         .split(',')
@@ -2014,37 +2005,14 @@ function getFloorCaptureSelectors() {
     return selectors.length ? selectors : DEFAULT_FLOOR_CAPTURE_SELECTOR.split(',').map(selector => selector.trim());
 }
 
-function getCleanElementText(element) {
-    if (!element) return '';
-    if (element.matches?.(FLOOR_CAPTURE_EXCLUDE_SELECTOR)) return '';
-    const clone = element.cloneNode(true);
-    clone.querySelectorAll?.(FLOOR_CAPTURE_EXCLUDE_SELECTOR).forEach(child => child.remove());
-    clone.querySelectorAll?.('[hidden], [aria-hidden="true"], .displayNone, .hidden').forEach(child => child.remove());
-    return normalizeCapturedFloorText(clone.innerText || clone.textContent || '');
-}
-
-function queryFloorContentCandidates(messageElement) {
-    for (const selector of getFloorCaptureSelectors()) {
-        let matches = [];
-        try {
-            matches = Array.from(messageElement.querySelectorAll?.(selector) || []);
-        } catch {
-            continue;
-        }
-        const texts = matches
-            .map(getCleanElementText)
-            .filter(Boolean);
-        if (texts.length) return texts;
-    }
-    return [];
-}
-
-function getMessageTextFromElement(messageElement) {
-    if (!messageElement) return '';
-    const candidates = queryFloorContentCandidates(messageElement);
-    if (candidates.length) return candidates.join('\n\n');
-    const fallback = messageElement.querySelector?.('.mes_text') || messageElement.querySelector?.('.mes_block') || messageElement;
-    return getCleanElementText(fallback);
+function getMessageTextFromElement(messageElement, rawMessage = '') {
+    return extractFloorText({
+        documentRef: document,
+        messageElement,
+        rawMessage,
+        selectors: getFloorCaptureSelectors(),
+        excludeSelector: FLOOR_CAPTURE_EXCLUDE_SELECTOR,
+    });
 }
 
 function getMessageCharacterForCapture(messageId) {
@@ -2061,7 +2029,7 @@ async function captureMessageFloor(messageElement) {
     if (state.disabledByFull) return;
     const messageId = getMessageIdFromElement(messageElement);
     const message = messageId !== null ? chat?.[messageId] : null;
-    const content = getMessageTextFromElement(messageElement)
+    const content = getMessageTextFromElement(messageElement, message?.mes)
         || htmlToPlainText(message?.mes || '').trim();
 
     if (!content) {
