@@ -122,11 +122,8 @@ const state = {
     searchTimer: null,
     qrBarObserver: null,
     theme: null,
-    previewTheme: null,
-    themePreviewActive: false,
     themes: [],
     activeThemeId: 'default',
-    themeDraft: false,
     exportScope: 'all',
     launcherMode: savedLauncherMode,
     autoCaptureUserInput: localSettings.autoCaptureUserInput !== false,
@@ -1025,6 +1022,32 @@ const SHARE_CARD_THEMES = [
 
 const SHARE_CARD_BACKGROUNDS = ['#eef7f2', '#f4f0e5', '#fff4ec', '#edf2ff', '#f2e4b8', '#ffffff', '#1f1f1f', '#203b2a', '#182235', '#3a2330'];
 
+const APPLE_GLASS_SHARED_VARIABLES = {
+    '--tnl-radius-panel': '26px',
+    '--tnl-radius-card': '18px',
+    '--tnl-font-family': '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif',
+    '--tnl-text-shadow': 'transparent',
+    '--tnl-mini-button-shadow': '0 0 0 1px var(--tnl-line), 0 8px 24px var(--tnl-shadow-dark)',
+    '--tnl-mini-button-hover-shadow': '0 0 0 1px color-mix(in srgb, var(--tnl-gold) 24%, var(--tnl-line)), 0 10px 28px var(--tnl-shadow-dark)',
+    '--tnl-filter-hover-shadow': '0 0 0 1px color-mix(in srgb, var(--tnl-gold) 24%, var(--tnl-line)), 0 14px 34px var(--tnl-shadow-dark)',
+    '--tnl-filter-icon-shadow': '0 0 0 1px var(--tnl-line), 0 8px 20px var(--tnl-shadow-dark)',
+    '--tnl-inline-action-bg': 'transparent',
+    '--tnl-inline-action-shadow': 'none',
+    '--tnl-inline-action-hover-shadow': 'none',
+    '--tnl-inline-icon-shadow': '0 0 0 1px var(--tnl-line)',
+    '--tnl-note-bg': 'var(--tnl-card-image), var(--tnl-card-bg)',
+    '--tnl-note-shadow': '0 18px 46px var(--tnl-shadow-dark)',
+    '--tnl-note-padding': '18px 20px',
+    '--tnl-note-topline-bg': 'transparent',
+    '--tnl-note-topline-border': '0',
+    '--tnl-note-topline-padding': '0',
+    '--tnl-note-topline-radius': '0',
+    '--tnl-note-topline-margin': '0 0 12px',
+    '--tnl-note-dot-display': 'none',
+    '--tnl-filter-shadow': '0 12px 32px var(--tnl-shadow-dark)',
+    '--tnl-control-shadow': '0 10px 28px var(--tnl-shadow-dark), inset 0 1px 0 rgba(255, 255, 255, 0.16)',
+};
+
 const APPLE_GLASS_DAY_VARIABLES = {
     '--tnl-apple-mode': 'day',
     '--tnl-paper': '#f5f5f7',
@@ -1146,6 +1169,7 @@ function getLiteBuiltInThemes() {
         name: 'Apple Glass',
         variables: {
             ...DEFAULT_THEME.variables,
+            ...APPLE_GLASS_SHARED_VARIABLES,
             ...APPLE_GLASS_DAY_VARIABLES,
             '--tnl-theme-flavor': 'apple',
         },
@@ -2467,20 +2491,8 @@ function buildPanel() {
                     <div class="tnl-theme-picker">
                         <select id="tavern-notes-lite-theme-select" title="${htmlEscape(t('switchTheme'))}"></select>
                         <button id="tavern-notes-lite-theme-import" class="tnl-theme-icon-button" title="${htmlEscape(t('importTheme'))}" aria-label="${htmlEscape(t('importTheme'))}"><i class="fa-solid fa-file-import"></i></button>
-                        <button id="tavern-notes-lite-theme-export" class="tnl-theme-icon-button" title="${htmlEscape(t('exportCurrentTheme'))}" aria-label="${htmlEscape(t('exportCurrentTheme'))}"><i class="fa-solid fa-file-export"></i></button>
                         <button id="tavern-notes-lite-theme-delete" class="tnl-theme-icon-button" title="${htmlEscape(t('deleteTheme'))}" aria-label="${htmlEscape(t('deleteTheme'))}"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
-                    <input id="tavern-notes-lite-theme-name-input" class="tnl-theme-input" type="text" placeholder="${htmlEscape(t('themeName'))}" />
-                    <div class="tnl-theme-actions">
-                        <button id="tavern-notes-lite-theme-preview-save" class="tnl-export-choice"><i class="fa-solid fa-eye"></i><span>${htmlEscape(t('previewSave'))}</span></button>
-                        <button id="tavern-notes-lite-theme-save-as" class="tnl-export-choice"><i class="fa-solid fa-copy"></i><span>${htmlEscape(t('saveAs'))}</span></button>
-                        <button id="tavern-notes-lite-theme-reset" class="tnl-export-choice"><i class="fa-solid fa-rotate-left"></i><span>${htmlEscape(t('resetDefault'))}</span></button>
-                    </div>
-                    <details class="tnl-theme-guide">
-                        <summary><i class="fa-solid fa-circle-info"></i><span>${htmlEscape(t('themeGuide'))}</span></summary>
-                        <pre>${htmlEscape(t('themeGuideContent'))}</pre>
-                    </details>
-                    <textarea id="tavern-notes-lite-theme-code" spellcheck="false"></textarea>
                     <input id="tavern-notes-lite-theme-file" type="file" accept=".json,application/json" hidden />
                 </div>
             </div>
@@ -2632,12 +2644,8 @@ function bindEvents() {
     document.querySelector('#tavern-notes-lite-page-input')?.addEventListener('keydown', event => {
         if (event.key === 'Enter') jumpToInputPage();
     });
-    document.querySelector('#tavern-notes-lite-theme-export')?.addEventListener('click', exportTheme);
-    document.querySelector('#tavern-notes-lite-theme-preview-save')?.addEventListener('click', () => previewAndSaveThemeFromEditor().catch(error => notify(error.message, 'error')));
-    document.querySelector('#tavern-notes-lite-theme-save-as')?.addEventListener('click', () => saveThemeAsFromEditor().catch(error => notify(error.message, 'error')));
     document.querySelector('#tavern-notes-lite-theme-import')?.addEventListener('click', () => document.querySelector('#tavern-notes-lite-theme-file')?.click());
     document.querySelector('#tavern-notes-lite-theme-delete')?.addEventListener('click', () => deleteSelectedTheme().catch(error => notify(error.message, 'error')));
-    document.querySelector('#tavern-notes-lite-theme-reset')?.addEventListener('click', () => activateTheme('default').catch(error => notify(error.message, 'error')));
     document.querySelector('#tavern-notes-lite-theme-select')?.addEventListener('change', event => {
         activateTheme(event.target.value).catch(error => notify(error.message, 'error'));
     });
@@ -2809,7 +2817,6 @@ function toggleThemeMenu() {
         closeThemeMenu();
         return;
     }
-    syncThemeEditor();
     refreshThemeList().catch(() => {});
     menu.classList.add('open');
     menu.setAttribute('aria-hidden', 'false');
@@ -2817,7 +2824,6 @@ function toggleThemeMenu() {
 
 function closeThemeMenu() {
     const menu = document.querySelector('#tavern-notes-lite-theme-menu');
-    revertThemePreview();
     menu?.classList.remove('open');
     menu?.setAttribute('aria-hidden', 'true');
 }
@@ -3914,8 +3920,7 @@ function normalizeAppleThemeId(id = state.activeThemeId) {
 }
 
 function themeIsApple(theme = state.theme) {
-    return normalizeAppleThemeId(state.activeThemeId) === APPLE_THEME_ID
-        || String(theme?.variables?.['--tnl-theme-flavor'] || '').toLowerCase() === 'apple';
+    return String(theme?.variables?.['--tnl-theme-flavor'] || '').toLowerCase() === 'apple';
 }
 
 function applyAppleGlassMode(theme) {
@@ -3926,6 +3931,7 @@ function applyAppleGlassMode(theme) {
         ...theme,
         variables: {
             ...theme.variables,
+            ...APPLE_GLASS_SHARED_VARIABLES,
             ...variables,
         },
     };
@@ -3954,31 +3960,11 @@ function paintTheme(theme) {
     return clean;
 }
 
-function applyTheme(theme, options = {}) {
-    const {
-        commit = true,
-        syncEditor = true,
-        labelKey = commit ? 'currentTheme' : 'previewTheme',
-    } = options;
+function applyTheme(theme) {
     const clean = paintTheme(theme);
-    if (commit) {
-        state.theme = clean;
-        state.previewTheme = null;
-        state.themePreviewActive = false;
-    } else {
-        state.previewTheme = clean;
-        state.themePreviewActive = true;
-    }
-    document.querySelector('.tnl-theme-name')?.replaceChildren(document.createTextNode(t(labelKey, { name: clean.name || t('unnamedTheme') })));
-    if (syncEditor) syncThemeEditor(clean);
+    state.theme = clean;
+    document.querySelector('.tnl-theme-name')?.replaceChildren(document.createTextNode(t('currentTheme', { name: clean.name || t('unnamedTheme') })));
     return clean;
-}
-
-function revertThemePreview() {
-    if (!state.themePreviewActive) return;
-    const theme = state.theme || DEFAULT_THEME;
-    applyTheme(theme, { commit: true, syncEditor: false, labelKey: 'currentTheme' });
-    state.themeDraft = false;
 }
 
 function renderThemeSelect() {
@@ -4024,82 +4010,8 @@ async function toggleAppleThemeMode() {
     }
     state.appleGlassMode = state.appleGlassMode === 'night' ? 'day' : 'night';
     saveLocalSettings();
-    applyTheme(state.theme || DEFAULT_THEME, { commit: true, syncEditor: true, labelKey: 'currentTheme' });
+    applyTheme(state.theme || DEFAULT_THEME);
     notify(t('appleThemeEnabled'), 'success');
-}
-
-function syncThemeEditor(theme = state.theme || DEFAULT_THEME) {
-    const clean = normalizeTheme(theme);
-    const nameInput = document.querySelector('#tavern-notes-lite-theme-name-input');
-    const code = document.querySelector('#tavern-notes-lite-theme-code');
-    if (nameInput) nameInput.value = clean.name || '';
-    if (code) code.value = JSON.stringify(clean, null, 2);
-}
-
-function getThemeFromEditor() {
-    const code = document.querySelector('#tavern-notes-lite-theme-code');
-    const nameInput = document.querySelector('#tavern-notes-lite-theme-name-input');
-    const theme = JSON.parse(code?.value || '{}');
-    if (nameInput?.value?.trim()) theme.name = nameInput.value.trim();
-    if (theme.format && theme.format !== 'tavern-notes-theme') throw new Error(t('invalidThemeFile'));
-    return normalizeTheme(theme);
-}
-
-function previewThemeFromEditor() {
-    applyTheme(getThemeFromEditor(), { commit: false, syncEditor: false, labelKey: 'previewTheme' });
-    notify(t('previewedTheme'), 'success');
-}
-
-async function previewAndSaveThemeFromEditor() {
-    const theme = getThemeFromEditor();
-    applyTheme(theme, { commit: false, syncEditor: false, labelKey: 'previewTheme' });
-    await saveThemeFromEditor(theme);
-}
-
-function askThemeName(theme, actionLabel) {
-    const currentName = theme?.name || document.querySelector('#tavern-notes-lite-theme-name-input')?.value || t('unnamedTheme');
-    const nextName = window.prompt(t('themeNamePrompt', { action: actionLabel }), currentName);
-    if (nextName === null) return null;
-    const cleanName = nextName.trim();
-    if (!cleanName) {
-        notify(t('themeNameEmpty'), 'warning');
-        return null;
-    }
-    return cleanName;
-}
-
-async function saveThemeFromEditor(themeFromEditor = null) {
-    const theme = themeFromEditor || getThemeFromEditor();
-    const shouldSaveAs = state.themeDraft || !state.activeThemeId || state.activeThemeId === 'default' || isAppleThemeId(state.activeThemeId);
-    const name = askThemeName(theme, shouldSaveAs ? t('saveAsAction') : t('saveAction'));
-    if (!name) return;
-    theme.name = name;
-    syncThemeEditor(theme);
-    if (shouldSaveAs) {
-        const data = await saveTheme(theme, null);
-        state.activeThemeId = data.id || state.activeThemeId;
-        state.themeDraft = false;
-        state.themePreviewActive = false;
-        notify(t('savedAsTheme'), 'success');
-        return;
-    }
-    await saveTheme(theme, state.activeThemeId);
-    state.themeDraft = false;
-    state.themePreviewActive = false;
-    notify(t('savedTheme'), 'success');
-}
-
-async function saveThemeAsFromEditor() {
-    const theme = getThemeFromEditor();
-    const name = askThemeName(theme, t('saveAsAction'));
-    if (!name) return;
-    theme.name = name;
-    syncThemeEditor(theme);
-    const data = await saveTheme(theme, null);
-    state.activeThemeId = data.id || state.activeThemeId;
-    state.themeDraft = false;
-    state.themePreviewActive = false;
-    notify(t('savedAsTheme'), 'success');
 }
 
 function renderDefaultIcon(src, extraClass = '') {
@@ -4134,11 +4046,9 @@ async function loadTheme() {
         try {
             const data = await api('/theme');
             state.activeThemeId = normalizeAppleThemeId(data.activeId || 'default');
-            state.themeDraft = false;
             applyTheme(data.theme || DEFAULT_THEME);
             renderThemeSelect();
         } catch {
-            state.themeDraft = false;
             applyTheme(DEFAULT_THEME);
         }
     }
@@ -4148,7 +4058,6 @@ async function refreshThemeList() {
     const data = await api('/themes');
     state.themes = data.themes || [];
     state.activeThemeId = normalizeAppleThemeId(data.activeId || 'default');
-    state.themeDraft = false;
     renderThemeSelect();
     applyTheme(data.activeTheme || DEFAULT_THEME);
 }
@@ -4157,7 +4066,6 @@ async function activateTheme(id) {
     const data = await api(`/themes/${encodeURIComponent(id || 'default')}/activate`, { method: 'POST' });
     state.themes = data.themes || state.themes;
     state.activeThemeId = normalizeAppleThemeId(data.activeId || data.id || id || 'default');
-    state.themeDraft = false;
     renderThemeSelect();
     applyTheme(data.theme || DEFAULT_THEME);
     notify(t('switchedTheme'), 'success');
@@ -4171,19 +4079,9 @@ async function saveTheme(theme, id = state.activeThemeId) {
     });
     state.themes = data.themes || state.themes;
     state.activeThemeId = normalizeAppleThemeId(data.activeId || data.id || state.activeThemeId || 'default');
-    state.themeDraft = false;
     renderThemeSelect();
     applyTheme(data.theme || clean);
     return data;
-}
-
-function exportTheme() {
-    const theme = getThemeFromEditor();
-    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const safeName = String(theme.name || '未命名主题').replace(/[\\/:*?"<>|]/g, '_').slice(0, 40);
-    exportFile(url, `酒馆笔记主题-${safeName}-${Date.now()}.json`);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 async function importThemeFile(event) {
@@ -4208,7 +4106,6 @@ async function deleteSelectedTheme() {
     const data = await api(`/themes/${encodeURIComponent(id)}`, { method: 'DELETE' });
     state.themes = data.themes || [];
     state.activeThemeId = normalizeAppleThemeId(data.activeId || 'default');
-    state.themeDraft = false;
     renderThemeSelect();
     applyTheme(data.theme || state.theme || DEFAULT_THEME);
     notify(t('deletedTheme'), 'success');

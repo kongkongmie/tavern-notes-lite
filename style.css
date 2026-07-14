@@ -521,7 +521,6 @@
 
 #tavern-notes-lite-panel[data-theme-flavor="apple"] #tavern-notes-lite-search,
 #tavern-notes-lite-panel[data-theme-flavor="apple"] .tnl-theme-input,
-#tavern-notes-lite-panel[data-theme-flavor="apple"] #tavern-notes-lite-theme-code,
 #tavern-notes-lite-panel[data-theme-flavor="apple"] #tavern-notes-lite-theme-select {
     border-color: var(--tnl-line);
     box-shadow: var(--tnl-control-inset-shadow);
@@ -2556,7 +2555,7 @@
 
 .tnl-theme-picker {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) repeat(4, 34px);
+    grid-template-columns: minmax(0, 1fr) repeat(2, 34px);
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
@@ -2608,8 +2607,7 @@
     box-shadow: var(--tnl-mini-button-hover-shadow);
 }
 
-.tnl-theme-input,
-#tavern-notes-lite-theme-code {
+.tnl-theme-input {
     width: 100%;
     box-sizing: border-box;
     border: 1px solid color-mix(in srgb, var(--tnl-line) 72%, transparent);
@@ -2625,71 +2623,6 @@
     margin-bottom: 10px;
     padding: 0 14px;
     border-radius: 999px;
-}
-
-.tnl-theme-guide {
-    margin: 0 0 10px;
-    border: 1px solid color-mix(in srgb, var(--tnl-line) 72%, transparent);
-    border-radius: 16px;
-    color: var(--tnl-ink);
-    background: var(--tnl-control-inset-bg);
-    box-shadow: var(--tnl-control-inset-shadow);
-    overflow: hidden;
-}
-
-.tnl-theme-guide summary {
-    min-height: 34px;
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    color: var(--tnl-em);
-}
-
-.tnl-theme-guide summary::marker {
-    color: var(--tnl-quote);
-}
-
-.tnl-theme-guide summary i {
-    color: var(--tnl-quote);
-}
-
-.tnl-theme-guide pre {
-    max-height: 180px;
-    margin: 0;
-    padding: 12px;
-    overflow: auto;
-    border-top: 1px solid color-mix(in srgb, var(--tnl-line) 62%, transparent);
-    color: var(--tnl-ink);
-    font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
-    white-space: pre-wrap;
-}
-
-#tavern-notes-lite-theme-code {
-    min-height: 220px;
-    max-height: 38dvh;
-    resize: vertical;
-    padding: 12px;
-    border-radius: 18px;
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: pre;
-}
-
-.tnl-theme-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.tnl-theme-actions .tnl-export-choice {
-    min-height: 38px;
-    margin-top: 0;
-    justify-content: center;
-    padding: 0 10px;
 }
 
 .tnl-export-title {
@@ -3055,17 +2988,13 @@
     }
 
     .tnl-theme-picker {
-        grid-template-columns: minmax(0, 1fr) repeat(4, 32px);
+        grid-template-columns: minmax(0, 1fr) repeat(2, 32px);
         gap: 6px;
     }
 
     .tnl-theme-icon-button {
         width: 32px;
         height: 32px;
-    }
-
-    .tnl-theme-actions {
-        grid-template-columns: minmax(0, 1fr);
     }
 
     .tnl-share-card {
