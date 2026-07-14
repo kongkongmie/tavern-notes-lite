@@ -10,11 +10,13 @@ function messageElement(html) {
     return { document, element: document.querySelector('#message') };
 }
 
-const collapsed = messageElement('<div class="mes_text"><span>正文（8000+字）</span></div>');
+// The real failure mode: a renderer keeps the content tag but replaces its
+// body with a length summary. The raw SillyTavern message still has all text.
+const collapsed = messageElement('<div class="mes_text"><content>正文（8000字+）</content></div>');
 const recovered = extractFloorText({
     documentRef: collapsed.document,
     messageElement: collapsed.element,
-    rawMessage: `<details><summary>正文（8000+字）</summary><content>${longText}</content></details>`,
+    rawMessage: `:::newspaper 古风架空·春 :::\n\n<startTime>暮春</startTime>\n\n<content>${longText}</content>`,
     selectors,
     excludeSelector,
 });
@@ -23,7 +25,7 @@ const rendered = messageElement('<div class="mes_text"><content>页面里的明�
 const renderedResult = extractFloorText({
     documentRef: rendered.document,
     messageElement: rendered.element,
-    rawMessage: '<content>原始消息里的旧正文</content>',
+    rawMessage: '没有正文标签的原始消息',
     selectors,
     excludeSelector,
 });
@@ -39,9 +41,9 @@ const customResult = extractFloorText({
 
 const checks = {
     rawContentRecovered: recovered === longText,
-    summaryExcluded: !recovered.includes('8000+字'),
+    collapsedSummaryExcluded: !recovered.includes('8000字+'),
     longContentIntact: recovered.length > 8000,
-    renderedContentPreferred: renderedResult === '页面里的明确正文',
+    renderedContentFallback: renderedResult === '页面里的明确正文',
     customTagSupported: customResult === '自定义标签正文',
 };
 

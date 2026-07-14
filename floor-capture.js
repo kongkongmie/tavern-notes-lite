@@ -36,15 +36,17 @@ export function queryFloorCandidates(root, selectors, excludeSelector) {
 export function extractFloorText({ documentRef, messageElement, rawMessage, selectors, excludeSelector }) {
     if (!messageElement) return '';
     const contentSelectors = (selectors || []).filter(selector => selector !== '.mes_text');
-    const renderedCandidates = queryFloorCandidates(messageElement, contentSelectors, excludeSelector);
-    if (renderedCandidates.length) return renderedCandidates.join('\n\n');
-
+    // Renderers may replace a long body with a short summary while retaining
+    // the original tag. The stored message remains the source of truth.
     if (String(rawMessage || '').trim() && documentRef) {
         const rawRoot = documentRef.createElement('div');
         rawRoot.innerHTML = String(rawMessage);
         const rawCandidates = queryFloorCandidates(rawRoot, contentSelectors, excludeSelector);
         if (rawCandidates.length) return rawCandidates.join('\n\n');
     }
+
+    const renderedCandidates = queryFloorCandidates(messageElement, contentSelectors, excludeSelector);
+    if (renderedCandidates.length) return renderedCandidates.join('\n\n');
 
     const fallback = messageElement.querySelector?.('.mes_text')
         || messageElement.querySelector?.('.mes_block')
