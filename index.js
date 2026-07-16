@@ -23,7 +23,7 @@ import {
 
 const SETTINGS_KEY = 'tavern-notes-lite-settings';
 const UPDATE_NOTICE_KEY = 'tavern-notes-lite-update-notice';
-const EXTENSION_VERSION = '0.1.0';
+const EXTENSION_VERSION = '0.1.1';
 const REMOTE_MANIFEST_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/manifest.json';
 const THEME_STORAGE_KEY = 'tavern-notes-lite-themes';
 const ACTIVE_THEME_KEY = 'tavern-notes-lite-active-theme';
@@ -101,6 +101,13 @@ const state = {
     open: false,
     filter: 'all',
     query: '',
+    tagFilter: '',
+    tags: [],
+    recentTags: Array.isArray(localSettings.recentTags) ? localSettings.recentTags.map(String).slice(0, 16) : [],
+    tagManagerQuery: '',
+    tagManagerSort: 'count',
+    editingNote: null,
+    editingTags: [],
     notes: [],
     characters: [],
     characterFilter: null,
@@ -165,7 +172,7 @@ const TEXT_ZH_CN = {
     theme: '主题',
     exportNotes: '导入导出笔记',
     closeNotes: '关闭酒馆笔记',
-    searchPlaceholder: '搜索笔记、角色、聊天...',
+    searchPlaceholder: '搜索笔记、角色、聊天、标签...',
     connecting: '正在连接酒馆笔记...',
     prevPage: '上一页',
     nextPage: '下一页',
@@ -238,6 +245,35 @@ const TEXT_ZH_CN = {
     share: '分享',
     delete: '删除',
     viewFull: '查看全文',
+    edit: '编辑',
+    editNote: '编辑笔记',
+    noteContent: '笔记正文',
+    noteContentRequired: '笔记正文不能为空。',
+    tags: '标签',
+    allTags: '全部标签',
+    clearTagFilter: '清除筛选',
+    tagLibrary: '全部标签',
+    tagLibraryIntro: '搜索或整理所有标签，点击标签即可查看对应笔记。',
+    tagShelfEmpty: '还没有标签，编辑任意笔记即可添加',
+    tagEmptyTitle: '从第一个标签开始',
+    tagEmptyIntro: '标签可以把不同角色、聊天里的笔记整理到一起。',
+    tagEmptyStepEdit: '打开任意一条笔记，点击“编辑”',
+    tagEmptyStepAdd: '在标签框输入名称，可用逗号分隔多个标签',
+    tagEmptyStepSave: '保存后，标签会自动出现在这里',
+    backToNotes: '返回笔记列表',
+    deleteTag: '删除标签',
+    confirmDeleteTag: '确定删除标签“{tag}”吗？\n\n它会从 {count} 条笔记中移除，但不会删除笔记。',
+    tagDeleted: '标签“{tag}”已从 {count} 条笔记中移除。',
+    searchTags: '搜索标签…',
+    sortByCount: '按使用次数',
+    sortByName: '按名称',
+    noMatchingTags: '没有找到匹配的标签。',
+    tagSuggestions: '已有标签推荐',
+    tagsPlaceholder: '例如：甜饼, 剧情线, 待整理',
+    tagsHelp: '输入后按回车或逗号添加；点击标签右侧的 × 可以移除。最多 20 个。',
+    filterByTag: '查看标签：{tag}',
+    saveChanges: '保存修改',
+    noteUpdated: '笔记已更新。',
     captured: '已摘录选中文字。',
     copied: '已复制。',
     filled: '已进入输入栏。',
@@ -372,7 +408,7 @@ const TEXTS = {
         liteStorageStatus: '瀏覽器本機儲存 · {size} · {count} 條',
         liteBackupReminder: 'Lite 筆記已佔約 {size}，或超過 30 天沒有匯出備份。建議現在匯出 JSON。',
         closeNotes: '關閉酒館筆記',
-        searchPlaceholder: '搜尋筆記、角色、聊天...',
+        searchPlaceholder: '搜尋筆記、角色、聊天、標籤...',
         connecting: '正在連接酒館筆記...',
         currentPage: '目前頁面',
         themeFiles: '主題檔案',
@@ -398,6 +434,35 @@ const TEXTS = {
         currentCharacter: '目前角色',
         copied: '已複製。',
         filled: '已進入輸入框。',
+        edit: '編輯',
+        editNote: '編輯筆記',
+        noteContent: '筆記正文',
+        noteContentRequired: '筆記正文不能為空。',
+        tags: '標籤',
+        allTags: '全部標籤',
+        clearTagFilter: '清除篩選',
+        tagLibrary: '全部標籤',
+        tagLibraryIntro: '搜尋或整理所有標籤，點擊標籤即可查看對應筆記。',
+        tagShelfEmpty: '還沒有標籤，編輯任意筆記即可新增',
+        tagEmptyTitle: '從第一個標籤開始',
+        tagEmptyIntro: '標籤可以把不同角色、聊天裡的筆記整理到一起。',
+        tagEmptyStepEdit: '打開任意一則筆記，點擊「編輯」',
+        tagEmptyStepAdd: '在標籤欄輸入名稱，可用逗號分隔多個標籤',
+        tagEmptyStepSave: '儲存後，標籤會自動出現在這裡',
+        backToNotes: '返回筆記列表',
+        deleteTag: '刪除標籤',
+        confirmDeleteTag: '確定刪除標籤「{tag}」嗎？\n\n它會從 {count} 則筆記中移除，但不會刪除筆記。',
+        tagDeleted: '標籤「{tag}」已從 {count} 則筆記中移除。',
+        searchTags: '搜尋標籤…',
+        sortByCount: '按使用次數',
+        sortByName: '按名稱',
+        noMatchingTags: '找不到符合的標籤。',
+        tagSuggestions: '現有標籤建議',
+        tagsPlaceholder: '例如：甜餅, 劇情線, 待整理',
+        tagsHelp: '輸入後按 Enter 或逗號新增；點擊標籤右側的 × 可以移除。最多 20 個。',
+        filterByTag: '查看標籤：{tag}',
+        saveChanges: '儲存修改',
+        noteUpdated: '筆記已更新。',
         openNotes: '打開酒館筆記',
         updateAvailableTitle: '酒館筆記有新版本',
         updateAvailable: '偵測到 v{version}。請在 SillyTavern 擴充面板裡更新酒館筆記 Lite。',
@@ -505,7 +570,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         theme: 'Theme',
         exportNotes: 'Export notes',
         closeNotes: 'Close Tavern Notes Lite',
-        searchPlaceholder: 'Search notes, characters, chats...',
+        searchPlaceholder: 'Search notes, characters, chats, tags...',
         connecting: 'Connecting to Tavern Notes Lite...',
         prevPage: 'Previous page',
         nextPage: 'Next page',
@@ -576,6 +641,35 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         share: 'Share',
         delete: 'Delete',
         viewFull: 'View full note',
+        edit: 'Edit',
+        editNote: 'Edit note',
+        noteContent: 'Note text',
+        noteContentRequired: 'Note text cannot be empty.',
+        tags: 'Tags',
+        allTags: 'All tags',
+        clearTagFilter: 'Clear filter',
+        tagLibrary: 'All tags',
+        tagLibraryIntro: 'Search and browse every tag. Select one to view its notes.',
+        tagShelfEmpty: 'No tags yet. Edit any note to add one',
+        tagEmptyTitle: 'Create your first tag',
+        tagEmptyIntro: 'Tags bring related notes from different characters and chats together.',
+        tagEmptyStepEdit: 'Open any note and select Edit',
+        tagEmptyStepAdd: 'Enter a tag; use commas to add more than one',
+        tagEmptyStepSave: 'Save the note and the tag will appear here',
+        backToNotes: 'Back to notes',
+        deleteTag: 'Delete tag',
+        confirmDeleteTag: 'Delete the tag "{tag}"?\n\nIt will be removed from {count} notes. No notes will be deleted.',
+        tagDeleted: 'Removed "{tag}" from {count} notes.',
+        searchTags: 'Search tags…',
+        sortByCount: 'Most used',
+        sortByName: 'Name',
+        noMatchingTags: 'No matching tags.',
+        tagSuggestions: 'Existing tag suggestions',
+        tagsPlaceholder: 'e.g. favorite, plot, review later',
+        tagsHelp: 'Press Enter or comma to add. Select × to remove a tag. Up to 20 tags.',
+        filterByTag: 'Filter by tag: {tag}',
+        saveChanges: 'Save changes',
+        noteUpdated: 'Note updated.',
         captured: 'Selected text captured.',
         copied: 'Copied.',
         filled: 'Moved to input box.',
@@ -694,7 +788,7 @@ assets control the header icon and background image; the input-bar and capture b
         theme: '테마',
         exportNotes: '노트 내보내기',
         closeNotes: '술집 노트 닫기',
-        searchPlaceholder: '노트, 캐릭터, 채팅 검색...',
+        searchPlaceholder: '노트, 캐릭터, 채팅, 태그 검색...',
         connecting: '술집 노트에 연결 중...',
         prevPage: '이전 페이지',
         nextPage: '다음 페이지',
@@ -765,6 +859,35 @@ assets control the header icon and background image; the input-bar and capture b
         share: '공유',
         delete: '삭제',
         viewFull: '전체 보기',
+        edit: '편집',
+        editNote: '노트 편집',
+        noteContent: '노트 본문',
+        noteContentRequired: '노트 본문을 비워 둘 수 없습니다.',
+        tags: '태그',
+        allTags: '모든 태그',
+        clearTagFilter: '필터 해제',
+        tagLibrary: '모든 태그',
+        tagLibraryIntro: '모든 태그를 검색하고 정리할 수 있습니다. 태그를 누르면 해당 노트를 봅니다.',
+        tagShelfEmpty: '아직 태그가 없습니다. 노트를 편집해 추가하세요',
+        tagEmptyTitle: '첫 태그를 만들어 보세요',
+        tagEmptyIntro: '태그로 여러 캐릭터와 채팅의 관련 노트를 한곳에 모을 수 있습니다.',
+        tagEmptyStepEdit: '노트 하나를 열고 “편집”을 누릅니다',
+        tagEmptyStepAdd: '태그 이름을 입력합니다. 여러 개는 쉼표로 구분합니다',
+        tagEmptyStepSave: '저장하면 태그가 여기에 자동으로 표시됩니다',
+        backToNotes: '노트 목록으로',
+        deleteTag: '태그 삭제',
+        confirmDeleteTag: '“{tag}” 태그를 삭제할까요?\n\n{count}개의 노트에서 태그만 제거되며 노트는 삭제되지 않습니다.',
+        tagDeleted: '“{tag}” 태그를 {count}개의 노트에서 제거했습니다.',
+        searchTags: '태그 검색…',
+        sortByCount: '사용 횟수순',
+        sortByName: '이름순',
+        noMatchingTags: '일치하는 태그가 없습니다.',
+        tagSuggestions: '기존 태그 추천',
+        tagsPlaceholder: '예: 최애, 줄거리, 나중에 정리',
+        tagsHelp: 'Enter 또는 쉼표로 추가하고 ×로 제거합니다. 최대 20개까지 가능합니다.',
+        filterByTag: '태그로 보기: {tag}',
+        saveChanges: '변경 저장',
+        noteUpdated: '노트를 수정했습니다.',
         captured: '선택한 글을 발췌했습니다.',
         copied: '복사했습니다.',
         filled: '입력창에 넣었습니다.',
@@ -1312,6 +1435,7 @@ function saveLocalSettings() {
         floorCaptureSelector: state.floorCaptureSelector,
         appleGlassMode: state.appleGlassMode,
         currentUserName: state.currentUserName,
+        recentTags: state.recentTags,
         shareCard: state.shareCardSettings,
     }));
 }
@@ -1543,6 +1667,7 @@ function getListPath() {
     params.set('limit', String(state.pageSize));
     params.set('offset', String((state.page - 1) * state.pageSize));
     if (state.query.trim()) params.set('q', state.query.trim());
+    if (state.tagFilter) params.set('tag', state.tagFilter);
     const currentCharacter = getCurrentCharacter();
     if (currentCharacter.id !== null) params.set('currentCharacterId', String(currentCharacter.id));
     if (!state.autoCaptureUserInput) params.set('includeUserInput', 'false');
@@ -1561,8 +1686,22 @@ function getListPath() {
 function getCharactersPath() {
     const params = new URLSearchParams();
     if (state.query.trim()) params.set('q', state.query.trim());
+    if (state.tagFilter) params.set('tag', state.tagFilter);
     if (!state.autoCaptureUserInput) params.set('includeUserInput', 'false');
     return `/characters?${params.toString()}`;
+}
+
+function getTagsPath() {
+    const params = new URLSearchParams();
+    if (!state.autoCaptureUserInput) params.set('includeUserInput', 'false');
+    if (state.characterFilter) {
+        if (state.characterFilter.id !== null && state.characterFilter.id !== undefined && state.characterFilter.id !== '') {
+            params.set('characterId', String(state.characterFilter.id));
+        } else if (state.characterFilter.name) {
+            params.set('characterName', state.characterFilter.name);
+        }
+    }
+    return `/tags?${params.toString()}`;
 }
 
 async function refreshNotes() {
@@ -1571,12 +1710,14 @@ async function refreshNotes() {
         state.page = 1;
     }
     try {
-        const [data, characterData] = await Promise.all([
+        const [data, characterData, tagData] = await Promise.all([
             api(getListPath()),
             api(getCharactersPath()),
+            api(getTagsPath()),
         ]);
         state.notes = data.notes || [];
         state.characters = characterData.characters || [];
+        state.tags = tagData.tags || [];
         const isCharacterDirectory = state.filter === 'characters' && !state.characterFilter;
         state.totalNotes = isCharacterDirectory ? state.characters.length : Number(data.totalNotes || 0);
         state.counts = data.counts || {};
@@ -1604,6 +1745,151 @@ function getMaxPage() {
 function isLongNote(note) {
     const content = String(note.content || '');
     return content.length > 120 || content.split(/\r?\n/).length > 3;
+}
+
+function renderNoteTags(note) {
+    const tags = Array.isArray(note?.tags) ? note.tags : [];
+    if (!tags.length) return '';
+    return `<div class="tnl-note-tags">${tags.map(tag => `
+        <button class="tnl-tag-chip ${state.tagFilter === tag ? 'active' : ''}" type="button" data-tag="${htmlEscape(tag)}" title="${htmlEscape(t('filterByTag', { tag }))}">
+            <i class="fa-solid fa-tag"></i><span>${htmlEscape(tag)}</span>
+        </button>
+    `).join('')}</div>`;
+}
+
+function renderTagShelf() {
+    const shelf = document.querySelector('#tavern-notes-lite-tag-shelf');
+    if (!shelf) return;
+    shelf.classList.remove('tnl-hidden');
+    const homeTags = getHomeTags();
+    shelf.innerHTML = `
+        <button class="tnl-tag-filter tnl-tag-library-open" type="button">
+            <i class="fa-solid fa-tags"></i><span>${htmlEscape(t('allTags'))}</span><small>${htmlEscape(state.tags.length)}</small>
+        </button>
+        ${state.tagFilter ? `
+            <button class="tnl-tag-filter tnl-tag-clear active" type="button" data-tag="">
+                <i class="fa-solid fa-xmark"></i><span>${htmlEscape(t('clearTagFilter'))}</span>
+            </button>
+        ` : ''}
+        ${homeTags.map(tag => `
+            <button class="tnl-tag-filter ${state.tagFilter === tag.name ? 'active' : ''}" type="button" data-tag="${htmlEscape(tag.name)}">
+                <span>${htmlEscape(tag.name)}</span><small>${htmlEscape(tag.count)}</small>
+            </button>
+        `).join('')}
+        ${!state.tags.length ? `
+            <div class="tnl-tag-shelf-empty"><i class="fa-solid fa-pen-to-square"></i><span>${htmlEscape(t('tagShelfEmpty'))}</span></div>
+        ` : ''}
+    `;
+}
+
+function normalizeTagKey(tag) {
+    return String(tag || '').trim().toLocaleLowerCase();
+}
+
+function rememberTag(tag) {
+    const name = String(tag || '').trim();
+    if (!name) return;
+    const key = normalizeTagKey(name);
+    state.recentTags = [name, ...state.recentTags.filter(item => normalizeTagKey(item) !== key)].slice(0, 16);
+    saveLocalSettings();
+}
+
+function getHomeTags() {
+    const tagsByKey = new Map(state.tags.map(tag => [normalizeTagKey(tag.name), tag]));
+    const selected = [];
+    const append = tag => {
+        if (!tag || selected.some(item => normalizeTagKey(item.name) === normalizeTagKey(tag.name))) return;
+        selected.push(tag);
+    };
+    if (state.tagFilter) append(tagsByKey.get(normalizeTagKey(state.tagFilter)));
+    state.recentTags.forEach(name => append(tagsByKey.get(normalizeTagKey(name))));
+    [...state.tags].sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || a.name.localeCompare(b.name)).forEach(append);
+    return selected.slice(0, 12);
+}
+
+function renderTagLibrary() {
+    const list = document.querySelector('#tavern-notes-lite-tag-library-list');
+    if (!list) return;
+    const card = list.closest('.tnl-tag-library-card');
+    card?.classList.toggle('is-empty', state.tags.length === 0);
+    const query = normalizeTagKey(state.tagManagerQuery);
+    const tags = state.tags
+        .filter(tag => !query || normalizeTagKey(tag.name).includes(query))
+        .sort((a, b) => state.tagManagerSort === 'name'
+            ? a.name.localeCompare(b.name)
+            : Number(b.count || 0) - Number(a.count || 0) || a.name.localeCompare(b.name));
+    list.innerHTML = tags.length ? tags.map(tag => `
+        <div class="tnl-tag-library-row ${state.tagFilter === tag.name ? 'active' : ''}">
+            <button class="tnl-tag-library-item ${state.tagFilter === tag.name ? 'active' : ''}" type="button" data-tag="${htmlEscape(tag.name)}">
+                <i class="fa-solid fa-tag"></i><span>${htmlEscape(tag.name)}</span><small>${htmlEscape(tag.count)}</small>
+            </button>
+            <button class="tnl-tag-delete" type="button" data-delete-tag="${htmlEscape(tag.name)}" data-tag-count="${htmlEscape(tag.count)}" title="${htmlEscape(t('deleteTag'))}" aria-label="${htmlEscape(t('deleteTag'))}"><i class="fa-solid fa-trash-can"></i></button>
+        </div>
+    `).join('') : state.tags.length ? `<div class="tnl-tag-library-empty">${htmlEscape(t('noMatchingTags'))}</div>` : `
+        <div class="tnl-tag-empty-guide">
+            <div class="tnl-tag-empty-icon"><i class="fa-solid fa-tags"></i><i class="fa-solid fa-plus"></i></div>
+            <strong>${htmlEscape(t('tagEmptyTitle'))}</strong>
+            <p>${htmlEscape(t('tagEmptyIntro'))}</p>
+            <ol>
+                <li><b>1</b><span>${htmlEscape(t('tagEmptyStepEdit'))}</span></li>
+                <li><b>2</b><span>${htmlEscape(t('tagEmptyStepAdd'))}</span></li>
+                <li><b>3</b><span>${htmlEscape(t('tagEmptyStepSave'))}</span></li>
+            </ol>
+            <button class="tnl-tag-library-back" type="button"><i class="fa-solid fa-arrow-left"></i><span>${htmlEscape(t('backToNotes'))}</span></button>
+        </div>`;
+    document.querySelectorAll('#tavern-notes-lite-tag-library [data-tag-sort]').forEach(button => {
+        button.classList.toggle('active', button.dataset.tagSort === state.tagManagerSort);
+    });
+}
+
+function openTagLibrary() {
+    const menu = document.querySelector('#tavern-notes-lite-tag-library');
+    if (!menu) return;
+    state.tagManagerQuery = '';
+    const search = document.querySelector('#tavern-notes-lite-tag-search');
+    if (search) search.value = '';
+    renderTagLibrary();
+    menu.classList.add('open');
+    menu.setAttribute('aria-hidden', 'false');
+    setTimeout(() => search?.focus(), 0);
+}
+
+function closeTagLibrary() {
+    const menu = document.querySelector('#tavern-notes-lite-tag-library');
+    menu?.classList.remove('open');
+    menu?.setAttribute('aria-hidden', 'true');
+}
+
+async function deleteTagEverywhere(tag, count) {
+    if (!window.confirm(t('confirmDeleteTag', { tag, count }))) return;
+    const result = await api(`/tags/${encodeURIComponent(tag)}`, { method: 'DELETE' });
+    state.recentTags = state.recentTags.filter(item => normalizeTagKey(item) !== normalizeTagKey(tag));
+    if (normalizeTagKey(state.tagFilter) === normalizeTagKey(tag)) state.tagFilter = '';
+    state.page = 1;
+    saveLocalSettings();
+    await refreshNotes();
+    renderTagLibrary();
+    notify(t('tagDeleted', { tag, count: result.updated ?? count }), 'success');
+}
+
+function setTagFilter(tag = '') {
+    state.tagFilter = String(tag || '');
+    if (state.tagFilter) rememberTag(state.tagFilter);
+    state.page = 1;
+    refreshNotes();
+}
+
+function updateArchiveReadingMode() {
+    const panel = document.querySelector('#tavern-notes-lite-panel');
+    const list = document.querySelector('#tavern-notes-lite-list');
+    if (!panel || !list) return;
+    if (panel.dataset.themeFlavor !== 'archive') {
+        panel.classList.remove('tnl-archive-reading');
+        return;
+    }
+
+    const threshold = panel.classList.contains('tnl-archive-reading') ? 4 : 24;
+    panel.classList.toggle('tnl-archive-reading', list.scrollTop > threshold);
 }
 
 function getCharacterAvatar(character) {
@@ -1785,6 +2071,7 @@ function renderNoteArticles() {
                     <div class="tnl-note-content">${renderQuotedText(activeNote.content)}</div>
                     ${isLongNote(activeNote) ? `<button class="tnl-expand" title="${htmlEscape(t('viewFull'))}">...</button>` : ''}
                 </div>
+                ${renderNoteTags(activeNote)}
                 <div class="tnl-note-actions">
                     <button class="menu_button tnl-fill" title="${htmlEscape(t('fillInput'))}">
                         <i class="fa-solid fa-arrow-turn-down"></i><span>${htmlEscape(t('fillInput'))}</span>
@@ -1794,6 +2081,9 @@ function renderNoteArticles() {
                     </button>
                     <button class="menu_button tnl-share" title="${htmlEscape(t('share'))}">
                         <i class="fa-solid fa-share-nodes"></i><span>${htmlEscape(t('share'))}</span>
+                    </button>
+                    <button class="menu_button tnl-edit" title="${htmlEscape(t('editNote'))}">
+                        <i class="fa-solid fa-pen"></i><span>${htmlEscape(t('edit'))}</span>
                     </button>
                     <button class="menu_button tnl-delete" title="${htmlEscape(t('delete'))}">
                         <i class="fa-regular fa-trash-can"></i><span>${htmlEscape(t('delete'))}</span>
@@ -1809,6 +2099,7 @@ function renderNotes() {
     if (!list) return;
 
     renderFilterTabs();
+    renderTagShelf();
     updateFilterCounts();
     updateCharacterScopeStyle();
     const isCharacterDirectory = state.filter === 'characters' && !state.characterFilter;
@@ -2371,6 +2662,7 @@ function buildPanel() {
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input id="tavern-notes-lite-search" class="text_pole" type="search" placeholder="${htmlEscape(t('searchPlaceholder'))}" />
             </div>
+            <div id="tavern-notes-lite-tag-shelf" class="tnl-tag-shelf tnl-hidden" aria-label="${htmlEscape(t('tags'))}"></div>
             <div class="tnl-shell">
                 <nav class="tnl-filters">
                     ${getVisibleFilters().map(filter => `
@@ -2403,6 +2695,47 @@ function buildPanel() {
                     <div class="tnl-modal-title"></div>
                     <div class="tnl-modal-content"></div>
                 </div>
+            </div>
+            <div id="tavern-notes-lite-edit-menu" aria-hidden="true">
+                <form class="tnl-edit-card">
+                    <button class="tnl-icon-button tnl-edit-close" type="button" title="${htmlEscape(t('close'))}" aria-label="${htmlEscape(t('close'))}"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="tnl-export-title">${htmlEscape(t('editNote'))}</div>
+                    <label class="tnl-edit-field">
+                        <span>${htmlEscape(t('noteContent'))}</span>
+                        <textarea id="tavern-notes-lite-edit-content" class="text_pole" maxlength="200000" required></textarea>
+                    </label>
+                    <div class="tnl-edit-field">
+                        <span>${htmlEscape(t('tags'))}</span>
+                        <div class="tnl-tag-editor">
+                            <div id="tavern-notes-lite-edit-tag-chips" class="tnl-edit-tag-chips"></div>
+                            <input id="tavern-notes-lite-edit-tags" type="text" maxlength="820" placeholder="${htmlEscape(t('tagsPlaceholder'))}" autocomplete="off" />
+                        </div>
+                        <small>${htmlEscape(t('tagsHelp'))}</small>
+                    </div>
+                    <div class="tnl-tag-suggestions-wrap">
+                        <small>${htmlEscape(t('tagSuggestions'))}</small>
+                        <div id="tavern-notes-lite-tag-suggestions" class="tnl-tag-suggestions"></div>
+                    </div>
+                    <button class="menu_button tnl-edit-save" type="submit"><i class="fa-solid fa-floppy-disk"></i><span>${htmlEscape(t('saveChanges'))}</span></button>
+                </form>
+            </div>
+            <div id="tavern-notes-lite-tag-library" aria-hidden="true">
+                <section class="tnl-tag-library-card">
+                    <button class="tnl-icon-button tnl-tag-library-close" type="button" title="${htmlEscape(t('close'))}" aria-label="${htmlEscape(t('close'))}"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="tnl-tag-library-heading">
+                        <span class="tnl-tag-library-mark"><i class="fa-solid fa-tags"></i></span>
+                        <div><div class="tnl-export-title">${htmlEscape(t('tagLibrary'))}</div><p class="tnl-tag-library-intro">${htmlEscape(t('tagLibraryIntro'))}</p></div>
+                    </div>
+                    <label class="tnl-tag-library-search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input id="tavern-notes-lite-tag-search" class="text_pole" type="search" placeholder="${htmlEscape(t('searchTags'))}" />
+                    </label>
+                    <div class="tnl-tag-sort" role="group">
+                        <button class="tnl-tag-sort-button active" type="button" data-tag-sort="count"><i class="fa-solid fa-arrow-down-wide-short"></i><span>${htmlEscape(t('sortByCount'))}</span></button>
+                        <button class="tnl-tag-sort-button" type="button" data-tag-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i><span>${htmlEscape(t('sortByName'))}</span></button>
+                    </div>
+                    <div id="tavern-notes-lite-tag-library-list" class="tnl-tag-library-list"></div>
+                </section>
             </div>
             <div id="tavern-notes-lite-export-menu" aria-hidden="true">
                 <div class="tnl-export-card">
@@ -2549,6 +2882,14 @@ function bindEvents() {
         clearTimeout(state.searchTimer);
         state.searchTimer = setTimeout(refreshNotes, 300);
     });
+    document.querySelector('#tavern-notes-lite-tag-shelf')?.addEventListener('click', event => {
+        if (event.target.closest?.('.tnl-tag-library-open')) {
+            openTagLibrary();
+            return;
+        }
+        const button = event.target.closest?.('.tnl-tag-filter');
+        if (button) setTagFilter(button.dataset.tag || '');
+    });
     document.querySelector('#tavern-notes-lite-floor-capture-selector')?.addEventListener('change', event => saveFloorCaptureSelector(event.target.value));
     document.querySelector('.tnl-filters')?.addEventListener('click', event => {
         const tab = event.target.closest?.('.tnl-filter');
@@ -2556,9 +2897,57 @@ function bindEvents() {
         setActiveFilter(tab.dataset.filter || 'all');
     });
     document.querySelector('#tavern-notes-lite-list')?.addEventListener('click', handleNoteAction);
+    document.querySelector('#tavern-notes-lite-list')?.addEventListener('scroll', updateArchiveReadingMode, { passive: true });
     document.querySelector('.tnl-modal-close')?.addEventListener('click', closeFullNote);
     document.querySelector('#tavern-notes-lite-modal')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-modal') closeFullNote();
+    });
+    document.querySelector('.tnl-edit-close')?.addEventListener('click', closeEditNote);
+    document.querySelector('#tavern-notes-lite-edit-menu')?.addEventListener('click', event => {
+        if (event.target.id === 'tavern-notes-lite-edit-menu') closeEditNote();
+    });
+    document.querySelector('#tavern-notes-lite-edit-menu form')?.addEventListener('submit', event => {
+        event.preventDefault();
+        saveEditedNote().catch(error => notify(error.message, 'error'));
+    });
+    document.querySelector('#tavern-notes-lite-edit-tags')?.addEventListener('input', renderTagSuggestions);
+    document.querySelector('#tavern-notes-lite-edit-tags')?.addEventListener('keydown', event => {
+        if (!['Enter', ',', '，'].includes(event.key)) return;
+        event.preventDefault();
+        commitEditTagInput();
+    });
+    document.querySelector('#tavern-notes-lite-edit-tag-chips')?.addEventListener('click', event => {
+        const button = event.target.closest?.('[data-remove-edit-tag]');
+        if (button) removeEditTag(button.dataset.removeEditTag || '');
+    });
+    document.querySelector('#tavern-notes-lite-tag-suggestions')?.addEventListener('click', event => {
+        const button = event.target.closest?.('[data-suggest-tag]');
+        if (button) addSuggestedTag(button.dataset.suggestTag || '');
+    });
+    document.querySelector('.tnl-tag-library-close')?.addEventListener('click', closeTagLibrary);
+    document.querySelector('#tavern-notes-lite-tag-library')?.addEventListener('click', event => {
+        if (event.target.id === 'tavern-notes-lite-tag-library') closeTagLibrary();
+        if (event.target.closest?.('.tnl-tag-library-back')) closeTagLibrary();
+        const deleteButton = event.target.closest?.('[data-delete-tag]');
+        if (deleteButton) {
+            deleteTagEverywhere(deleteButton.dataset.deleteTag || '', Number(deleteButton.dataset.tagCount || 0))
+                .catch(error => notify(error.message, 'error'));
+            return;
+        }
+        const tag = event.target.closest?.('.tnl-tag-library-item');
+        if (tag) {
+            setTagFilter(tag.dataset.tag || '');
+            closeTagLibrary();
+        }
+        const sort = event.target.closest?.('[data-tag-sort]');
+        if (sort) {
+            state.tagManagerSort = sort.dataset.tagSort === 'name' ? 'name' : 'count';
+            renderTagLibrary();
+        }
+    });
+    document.querySelector('#tavern-notes-lite-tag-search')?.addEventListener('input', event => {
+        state.tagManagerQuery = event.target.value || '';
+        renderTagLibrary();
     });
     document.querySelector('#tavern-notes-lite-export-menu')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-export-menu') closeExportMenu();
@@ -2631,6 +3020,8 @@ function bindEvents() {
     document.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
         closeFullNote();
+        closeEditNote();
+        closeTagLibrary();
         closeExportMenu();
         closeThemeMenu();
         closeShareCard();
@@ -2640,6 +3031,11 @@ function bindEvents() {
 async function handleNoteAction(event) {
     const button = event.target.closest('button');
     if (!button) return;
+
+    if (button.classList.contains('tnl-tag-chip')) {
+        setTagFilter(button.dataset.tag || '');
+        return;
+    }
 
     if (button.classList.contains('tnl-character-card')) {
         const id = button.dataset.characterId || null;
@@ -2681,6 +3077,8 @@ async function handleNoteAction(event) {
         notify(t('filled'), 'success');
     } else if (button.classList.contains('tnl-share')) {
         openShareCard(note);
+    } else if (button.classList.contains('tnl-edit')) {
+        openEditNote(note);
     } else if (button.classList.contains('tnl-delete')) {
         const confirmed = await confirmDelete(note);
         if (!confirmed) return;
@@ -2865,8 +3263,10 @@ function formatNoteForText(note, index) {
     const chatName = note.chat?.name || '';
     const message = note.chat?.messageId === null || note.chat?.messageId === undefined ? '' : `#${note.chat.messageId}`;
     const source = [created, chatName, message].filter(Boolean).join(' · ');
+    const tags = Array.isArray(note.tags) ? note.tags : [];
     return [
         `${index + 1}. ${note.content || ''}`,
+        tags.length ? `   #${tags.join(' #')}` : '',
         source ? `   ${source}` : '',
     ].filter(Boolean).join('\n');
 }
@@ -3875,6 +4275,112 @@ function closeFullNote() {
     modal?.setAttribute('aria-hidden', 'true');
 }
 
+function parseTagsInput(value) {
+    const unique = [];
+    for (const part of String(value || '').split(/[,，\n]/)) {
+        const tag = part.trim().replace(/^#+/, '').slice(0, 40);
+        if (!tag || unique.some(item => item.toLocaleLowerCase() === tag.toLocaleLowerCase())) continue;
+        unique.push(tag);
+        if (unique.length >= 20) break;
+    }
+    return unique;
+}
+
+function renderTagSuggestions() {
+    const input = document.querySelector('#tavern-notes-lite-edit-tags');
+    const list = document.querySelector('#tavern-notes-lite-tag-suggestions');
+    if (!input || !list) return;
+    const query = normalizeTagKey(input.value);
+    const selected = new Set(state.editingTags.map(normalizeTagKey));
+    const suggestions = [...state.tags]
+        .filter(tag => !selected.has(normalizeTagKey(tag.name)) && (!query || normalizeTagKey(tag.name).includes(query)))
+        .sort((a, b) => Number(b.count || 0) - Number(a.count || 0) || a.name.localeCompare(b.name))
+        .slice(0, 8);
+    list.innerHTML = suggestions.map(tag => `
+        <button type="button" data-suggest-tag="${htmlEscape(tag.name)}"><span>${htmlEscape(tag.name)}</span><small>${htmlEscape(tag.count)}</small></button>
+    `).join('');
+    list.parentElement?.classList.toggle('tnl-hidden', !suggestions.length);
+}
+
+function addSuggestedTag(tag) {
+    const input = document.querySelector('#tavern-notes-lite-edit-tags');
+    if (!input) return;
+    addEditTags([tag]);
+    input.value = '';
+    rememberTag(tag);
+    renderTagSuggestions();
+    input.focus();
+}
+
+function renderEditTagChips() {
+    const list = document.querySelector('#tavern-notes-lite-edit-tag-chips');
+    if (!list) return;
+    list.innerHTML = state.editingTags.map(tag => `
+        <span class="tnl-edit-tag-chip"><i class="fa-solid fa-tag"></i><span>${htmlEscape(tag)}</span><button type="button" data-remove-edit-tag="${htmlEscape(tag)}" title="${htmlEscape(t('deleteTag'))}" aria-label="${htmlEscape(t('deleteTag'))}"><i class="fa-solid fa-xmark"></i></button></span>
+    `).join('');
+    list.classList.toggle('tnl-hidden', !state.editingTags.length);
+}
+
+function addEditTags(tags) {
+    state.editingTags = parseTagsInput([...state.editingTags, ...tags].join(','));
+    renderEditTagChips();
+}
+
+function commitEditTagInput() {
+    const input = document.querySelector('#tavern-notes-lite-edit-tags');
+    if (!input) return;
+    addEditTags(parseTagsInput(input.value));
+    input.value = '';
+    renderTagSuggestions();
+}
+
+function removeEditTag(tag) {
+    state.editingTags = state.editingTags.filter(item => normalizeTagKey(item) !== normalizeTagKey(tag));
+    renderEditTagChips();
+    renderTagSuggestions();
+}
+
+function openEditNote(note) {
+    const menu = document.querySelector('#tavern-notes-lite-edit-menu');
+    if (!menu || !note) return;
+    state.editingNote = note;
+    state.editingTags = parseTagsInput(note.tags || []);
+    const content = menu.querySelector('#tavern-notes-lite-edit-content');
+    const tags = menu.querySelector('#tavern-notes-lite-edit-tags');
+    if (content) content.value = note.content || '';
+    if (tags) tags.value = '';
+    renderEditTagChips();
+    renderTagSuggestions();
+    menu.classList.add('open');
+    menu.setAttribute('aria-hidden', 'false');
+    setTimeout(() => content?.focus(), 0);
+}
+
+function closeEditNote() {
+    const menu = document.querySelector('#tavern-notes-lite-edit-menu');
+    menu?.classList.remove('open');
+    menu?.setAttribute('aria-hidden', 'true');
+    state.editingNote = null;
+    state.editingTags = [];
+}
+
+async function saveEditedNote() {
+    const note = state.editingNote;
+    if (!note) return;
+    const content = String(document.querySelector('#tavern-notes-lite-edit-content')?.value || '').trim();
+    if (!content) throw new Error(t('noteContentRequired'));
+    commitEditTagInput();
+    const tags = [...state.editingTags];
+    await api(`/notes/${encodeURIComponent(note.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content, tags }),
+    });
+    tags.forEach(rememberTag);
+    closeEditNote();
+    await refreshNotes();
+    notify(t('noteUpdated'), 'success');
+}
+
 function normalizeTheme(theme) {
     return {
         ...DEFAULT_THEME,
@@ -3923,6 +4429,7 @@ function paintTheme(theme) {
         const flavor = String(clean.variables['--tnl-theme-flavor'] || '').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
         if (flavor) panel.dataset.themeFlavor = flavor;
         else delete panel.dataset.themeFlavor;
+        if (flavor !== 'archive') panel.classList.remove('tnl-archive-reading');
         if (clean.assets.backgroundImage) {
             const image = String(clean.assets.backgroundImage).trim();
             const cssImage = /^(url|linear-gradient|radial-gradient|conic-gradient)\(/i.test(image) ? image : `url("${image}")`;
@@ -4264,9 +4771,12 @@ async function openPanel() {
     const panel = document.querySelector('#tavern-notes-lite-panel');
     if (!panel) return;
     state.open = true;
+    panel.classList.remove('tnl-archive-reading');
     panel.classList.add('open');
     updateFloatingLauncher();
     await refreshNotes();
+    const list = document.querySelector('#tavern-notes-lite-list');
+    if (list) list.scrollTop = 0;
 }
 
 function closePanel() {

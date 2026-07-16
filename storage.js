@@ -82,6 +82,18 @@ function makeId(seq) {
     return `tnl_${Date.now().toString(36)}_${String(seq).padStart(6, '0')}_${random}`;
 }
 
+function normalizeTags(tags) {
+    const values = Array.isArray(tags) ? tags : String(tags || '').split(/[,，\n]/);
+    const unique = [];
+    for (const value of values) {
+        const tag = String(value || '').trim().replace(/^#+/, '').slice(0, 40);
+        if (!tag || unique.some(item => item.toLocaleLowerCase() === tag.toLocaleLowerCase())) continue;
+        unique.push(tag);
+        if (unique.length >= 20) break;
+    }
+    return unique;
+}
+
 function cleanNote(input, seq, preserveIdentity = false) {
     const content = String(input?.content || '').trim();
     if (!content) throw new Error('Note content is empty.');
@@ -93,7 +105,7 @@ function cleanNote(input, seq, preserveIdentity = false) {
         type,
         content: content.slice(0, MAX_CONTENT_LENGTH),
         createdAt: preserveIdentity && input.createdAt ? String(input.createdAt) : now,
-        updatedAt: now,
+        updatedAt: preserveIdentity && input.updatedAt ? String(input.updatedAt) : now,
         character: {
             id: input?.character?.id ?? null,
             name: String(input?.character?.name || '未命名角色'),
@@ -105,7 +117,7 @@ function cleanNote(input, seq, preserveIdentity = false) {
             messageId: Number.isFinite(Number(input?.chat?.messageId)) ? Number(input.chat.messageId) : null,
         },
         source: String(input?.source || ''),
-        tags: Array.isArray(input?.tags) ? input.tags.map(String).slice(0, 20) : [],
+        tags: normalizeTags(input?.tags),
     };
 }
 
@@ -190,7 +202,12 @@ function searchMatches(note, query) {
 function baseFilteredNotes(notes, params) {
     const includeUserInput = params.get('includeUserInput') !== 'false';
     const query = String(params.get('q') || '').trim();
-    return notes.filter(note => (includeUserInput || note.type !== 'user_input') && searchMatches(note, query));
+    const selectedTag = String(params.get('tag') || '').trim().toLocaleLowerCase();
+    return notes.filter(note => (
+        (includeUserInput || note.type !== 'user_input')
+        && (!selectedTag || (note.tags || []).some(tag => tag.toLocaleLowerCase() === selectedTag))
+        && searchMatches(note, query)
+    ));
 }
 
 function countGroups(notes) {
@@ -246,6 +263,61 @@ async function deleteNote(id) {
     transaction.objectStore(NOTE_STORE).delete(String(id));
     transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: new Date().toISOString() });
     await transactionDone(transaction);
+}
+
+async function updateNote(id, payload) {
+    const database = await openLiteDatabase();
+    const readTransaction = database.transaction(NOTE_STORE, 'readonly');
+    const existing = await requestResult(readTransaction.objectStore(NOTE_STORE).get(String(id)));
+    if (!existing) throw new Error('Note not found.');
+    const content = String(payload?.content || '').trim();
+    if (!content) throw new Error('Note content is empty.');
+    const updated = {
+        ...existing,
+        content: content.slice(0, MAX_CONTENT_LENGTH),
+        tags: normalizeTags(payload?.tags),
+        updatedAt: new Date().toISOString(),
+    };
+    const transaction = database.transaction([NOTE_STORE, META_STORE], 'readwrite');
+    transaction.objectStore(NOTE_STORE).put(updated);
+    transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: updated.updatedAt });
+    await transactionDone(transaction);
+    return updated;
+}
+
+async function removeTagFromAllNotes(tag) {
+    const key = String(tag || '').trim().toLocaleLowerCase();
+    if (!key) throw new Error('Missing tag.');
+    const notes = await readAllNotes();
+    const changed = notes.filter(note => normalizeTags(note.tags).some(item => item.toLocaleLowerCase() === key));
+    if (!changed.length) return 0;
+    const updatedAt = new Date().toISOString();
+    const database = await openLiteDatabase();
+    const transaction = database.transaction([NOTE_STORE, META_STORE], 'readwrite');
+    const store = transaction.objectStore(NOTE_STORE);
+    for (const note of changed) {
+        store.put({
+            ...note,
+            tags: normalizeTags(note.tags).filter(item => item.toLocaleLowerCase() !== key),
+            updatedAt,
+        });
+    }
+    transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: updatedAt });
+    await transactionDone(transaction);
+    return changed.length;
+}
+
+function summarizeTags(notes) {
+    const counts = new Map();
+    for (const note of notes) {
+        for (const tag of normalizeTags(note.tags)) {
+            const key = tag.toLocaleLowerCase();
+            const current = counts.get(key) || { name: tag, count: 0 };
+            current.count += 1;
+            counts.set(key, current);
+        }
+    }
+    return Array.from(counts.values()).sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
 }
 
 export async function getAllLiteNotes() {
@@ -336,7 +408,7 @@ export async function liteApi(path, options = {}, user = 'default-user') {
     const method = String(options.method || 'GET').toUpperCase();
     if (url.pathname === '/status') {
         const notes = await readAllNotes();
-        return { ok: true, user, version: '0.1.0', totalNotes: notes.length, storage: 'IndexedDB' };
+        return { ok: true, user, version: '0.1.1', totalNotes: notes.length, storage: 'IndexedDB' };
     }
     if (url.pathname === '/notes' && method === 'POST') {
         const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
@@ -368,6 +440,22 @@ export async function liteApi(path, options = {}, user = 'default-user') {
     if (url.pathname === '/characters' && method === 'GET') {
         const allNotes = await readAllNotes();
         return { ok: true, characters: characterSummaries(baseFilteredNotes(allNotes, url.searchParams)) };
+    }
+    if (url.pathname === '/tags' && method === 'GET') {
+        const allNotes = await readAllNotes();
+        const params = new URLSearchParams(url.searchParams);
+        params.delete('q');
+        params.delete('tag');
+        return { ok: true, tags: summarizeTags(baseFilteredNotes(allNotes, params)) };
+    }
+    if (url.pathname.startsWith('/tags/') && method === 'DELETE') {
+        const tag = decodeURIComponent(url.pathname.slice('/tags/'.length));
+        return { ok: true, tag, updated: await removeTagFromAllNotes(tag) };
+    }
+    if (url.pathname.startsWith('/notes/') && method === 'PATCH') {
+        const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
+        const note = await updateNote(decodeURIComponent(url.pathname.slice('/notes/'.length)), payload);
+        return { ok: true, note };
     }
     if (url.pathname.startsWith('/notes/') && method === 'DELETE') {
         await deleteNote(decodeURIComponent(url.pathname.slice('/notes/'.length)));
