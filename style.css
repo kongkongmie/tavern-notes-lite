@@ -208,9 +208,68 @@
     object-fit: contain;
     display: block;
     flex: 0 0 auto;
-    filter: invert(88%) sepia(15%) saturate(304%) hue-rotate(352deg) brightness(95%) contrast(88%);
+    filter: none !important;
+    opacity: 0.88 !important;
     pointer-events: none;
     user-select: none;
+}
+
+.tavern-notes-lite-default-icon-light {
+    filter: invert(1) brightness(1.18) !important;
+    opacity: 0.96 !important;
+}
+
+#tavern-notes-lite-panel,
+#tavern-notes-lite-floating-launcher,
+#tavern-notes-lite-selection-capture {
+    max-width: 100dvw;
+    max-height: 100dvh;
+    box-sizing: border-box;
+    contain: layout paint;
+}
+
+#tavern-notes-lite-floating-launcher,
+#tavern-notes-lite-selection-capture {
+    overflow: clip;
+}
+
+#qr--bar:has(.tavern-notes-lite-qr-button),
+#qr--bar > .qr--buttons:has(.tavern-notes-lite-qr-button) {
+    min-width: 0;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+}
+
+@media screen and (max-width: 1000px) {
+    html.tavern-notes-lite-mobile-viewport {
+        width: 100%;
+        height: 100%;
+        overflow: hidden !important;
+        overscroll-behavior: none;
+        touch-action: none;
+    }
+
+    body.tavern-notes-lite-mobile-viewport {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100dvw !important;
+        height: 100dvh !important;
+        max-width: 100dvw !important;
+        max-height: 100dvh !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        overscroll-behavior: none;
+        touch-action: none !important;
+    }
+
+    #qr--bar:has(.tavern-notes-lite-qr-button) {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    #qr--bar .tavern-notes-lite-qr-button .tavern-notes-lite-default-icon.qr--button-icon {
+        margin-inline: 0.25em;
+    }
 }
 
 #qr--bar .tavern-notes-lite-qr-button .tavern-notes-lite-default-icon.qr--button-icon {

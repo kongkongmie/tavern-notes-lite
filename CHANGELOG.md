@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2
+
+- Fixed mobile viewport drift that could move the top toolbar outside the visible screen.
+- Kept Tavern Notes Lite toolbar controls contained within the SillyTavern input bar on narrow screens.
+- Replaced incompatible masked launcher icons with adaptive high-contrast PNG icons for light and dark themes.
+- Isolated imported share-card font CSS so third-party styles cannot affect the SillyTavern interface.
+- Completed localized export and share-card notifications in Simplified Chinese, Traditional Chinese, English, and Korean.
+
 ## 0.1.1
 
 - Added editable note text and removable per-note tag chips.

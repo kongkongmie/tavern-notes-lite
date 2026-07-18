@@ -23,7 +23,7 @@ import {
 
 const SETTINGS_KEY = 'tavern-notes-lite-settings';
 const UPDATE_NOTICE_KEY = 'tavern-notes-lite-update-notice';
-const EXTENSION_VERSION = '0.1.1';
+const EXTENSION_VERSION = '0.1.2';
 const REMOTE_MANIFEST_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/manifest.json';
 const THEME_STORAGE_KEY = 'tavern-notes-lite-themes';
 const ACTIVE_THEME_KEY = 'tavern-notes-lite-active-theme';
@@ -35,6 +35,7 @@ const FONT_DB_STORE = 'fonts';
 const DEFAULT_OPEN_ICON_URL = '/scripts/extensions/third-party/tavern-notes-lite/assets/tavern-notes-lite-open.png';
 const DEFAULT_CAPTURE_ICON_URL = '/scripts/extensions/third-party/tavern-notes-lite/assets/tavern-notes-lite-capture.png';
 const APPLE_THEME_ID = 'apple-glass';
+const MOBILE_VIEWPORT_QUERY = '(max-width: 1000px)';
 const LEGACY_APPLE_THEME_DAY_ID = 'apple-glass-day';
 const LEGACY_APPLE_THEME_NIGHT_ID = 'apple-glass-night';
 const LEGACY_FLOOR_CAPTURE_SELECTOR = '.comment, [data-tavern-notes-content], [data-note-content], .mes_text';
@@ -155,6 +156,41 @@ const state = {
     },
 };
 
+let mobileViewportMediaQuery = null;
+
+function updateMobileViewportGuard() {
+    const isMobile = mobileViewportMediaQuery?.matches
+        ?? window.matchMedia?.(MOBILE_VIEWPORT_QUERY)?.matches
+        ?? window.innerWidth <= 1000;
+    document.documentElement.classList.toggle('tavern-notes-lite-mobile-viewport', isMobile);
+    document.body?.classList.toggle('tavern-notes-lite-mobile-viewport', isMobile);
+}
+
+function installMobileViewportGuard() {
+    if (mobileViewportMediaQuery || !window.matchMedia) {
+        updateMobileViewportGuard();
+        return;
+    }
+    mobileViewportMediaQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+    updateMobileViewportGuard();
+    if (mobileViewportMediaQuery.addEventListener) {
+        mobileViewportMediaQuery.addEventListener('change', updateMobileViewportGuard);
+    } else {
+        mobileViewportMediaQuery.addListener?.(updateMobileViewportGuard);
+    }
+}
+
+function removeMobileViewportGuard() {
+    if (mobileViewportMediaQuery?.removeEventListener) {
+        mobileViewportMediaQuery.removeEventListener('change', updateMobileViewportGuard);
+    } else {
+        mobileViewportMediaQuery?.removeListener?.(updateMobileViewportGuard);
+    }
+    mobileViewportMediaQuery = null;
+    document.documentElement.classList.remove('tavern-notes-lite-mobile-viewport');
+    document.body?.classList.remove('tavern-notes-lite-mobile-viewport');
+}
+
 const LANGUAGE_OPTIONS = [
     { id: 'auto', label: '跟随酒馆' },
     { id: 'zh-CN', label: '简体中文' },
@@ -190,6 +226,8 @@ const TEXT_ZH_CN = {
     fullAdvantages: 'Full 需要安装后端，但支持本地文件存储、每日自动备份、多端共享同一份数据，以及完整的主题制作与融合功能。',
     importDone: '导入完成：新增 {imported} 条，跳过 {skipped} 条重复或空笔记。',
     invalidBackup: '无法导入：请选择酒馆笔记导出的 JSON 备份。',
+    noPageNotesToExport: '当前页面没有可导出的笔记。',
+    exportStarted: '已开始导出。',
     liteStorageStatus: '浏览器本地存储 · {size} · {count} 条',
     liteBackupReminder: 'Lite 笔记已占约 {size}，或超过 30 天没有导出备份。建议现在导出 JSON。',
     themeFiles: '主题文件',
@@ -217,6 +255,9 @@ const TEXT_ZH_CN = {
     importLocalFont: '导入本地字体',
     redrawPreview: '刷新预览',
     exportPng: '导出 PNG',
+    noShareCardToExport: '没有可导出的分享卡。',
+    shareCardExportFailed: '生成图片失败。',
+    shareCardExported: '已导出分享卡。',
     filtersAll: '全部',
     filtersCharacters: '角色',
     filtersUserInput: 'User 输入',
@@ -405,6 +446,8 @@ const TEXTS = {
         fullAdvantages: 'Full 需安裝後端，但支援本機檔案儲存、每日自動備份、多端共用同一份資料，以及完整的主題製作與融合功能。',
         importDone: '匯入完成：新增 {imported} 條，略過 {skipped} 條重複或空白筆記。',
         invalidBackup: '無法匯入：請選擇酒館筆記匯出的 JSON 備份。',
+        noPageNotesToExport: '目前頁面沒有可匯出的筆記。',
+        exportStarted: '已開始匯出。',
         liteStorageStatus: '瀏覽器本機儲存 · {size} · {count} 條',
         liteBackupReminder: 'Lite 筆記已佔約 {size}，或超過 30 天沒有匯出備份。建議現在匯出 JSON。',
         closeNotes: '關閉酒館筆記',
@@ -425,6 +468,9 @@ const TEXTS = {
         findFonts: '查找免費商用字體',
         redrawPreview: '重新整理預覽',
         exportPng: '匯出 PNG',
+        noShareCardToExport: '沒有可匯出的分享卡。',
+        shareCardExportFailed: '產生圖片失敗。',
+        shareCardExported: '已匯出分享卡。',
         userInput: 'User 輸入',
         hintAllNotes: '全部記錄',
         hintByCard: '按角色',
@@ -589,6 +635,8 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         fullAdvantages: 'Full requires the server plugin, but adds local file storage, daily automatic backups, shared data across devices, and complete theme creation and Tavern-theme merging.',
         importDone: 'Import complete: {imported} added, {skipped} duplicates or empty notes skipped.',
         invalidBackup: 'Import failed. Choose a JSON backup exported by Tavern Notes.',
+        noPageNotesToExport: 'There are no notes to export on this page.',
+        exportStarted: 'Export started.',
         liteStorageStatus: 'Browser storage · {size} · {count} notes',
         liteBackupReminder: 'Lite uses about {size}, or no JSON backup was exported for 30 days. Export a backup now.',
         themeFiles: 'Theme Files',
@@ -616,6 +664,9 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         importLocalFont: 'Import local font',
         redrawPreview: 'Refresh preview',
         exportPng: 'Export PNG',
+        noShareCardToExport: 'There is no share card to export.',
+        shareCardExportFailed: 'Could not generate the image.',
+        shareCardExported: 'Share card exported.',
         filtersAll: 'All',
         filtersCharacters: 'Characters',
         filtersUserInput: 'User input',
@@ -807,6 +858,8 @@ assets control the header icon and background image; the input-bar and capture b
         fullAdvantages: 'Full은 서버 플러그인이 필요하지만 로컬 파일 저장, 매일 자동 백업, 여러 기기에서 같은 데이터 사용, 전체 테마 제작 및 술집 테마 병합 기능을 제공합니다.',
         importDone: '가져오기 완료: {imported}개 추가, 중복 또는 빈 노트 {skipped}개 건너뜀.',
         invalidBackup: '가져올 수 없습니다. Tavern Notes에서 내보낸 JSON 백업을 선택하세요.',
+        noPageNotesToExport: '현재 페이지에 내보낼 노트가 없습니다.',
+        exportStarted: '내보내기를 시작했습니다.',
         liteStorageStatus: '브라우저 로컬 저장소 · {size} · {count}개',
         liteBackupReminder: 'Lite가 약 {size}를 사용 중이거나 30일 동안 JSON 백업이 없습니다. 지금 백업을 내보내세요.',
         themeFiles: '테마 파일',
@@ -834,6 +887,9 @@ assets control the header icon and background image; the input-bar and capture b
         importLocalFont: '로컬 글꼴 가져오기',
         redrawPreview: '미리보기 새로고침',
         exportPng: 'PNG 내보내기',
+        noShareCardToExport: '내보낼 공유 카드가 없습니다.',
+        shareCardExportFailed: '이미지 생성에 실패했습니다.',
+        shareCardExported: '공유 카드를 내보냈습니다.',
         filtersAll: '전체',
         filtersCharacters: '캐릭터',
         filtersUserInput: 'User 입력',
@@ -3322,7 +3378,7 @@ async function exportNotes(format = 'json') {
     const scope = state.exportScope === 'page' ? 'page' : 'all';
     if (scope === 'page') {
         const exportData = buildCurrentPageExport();
-        if (!exportData.notes.length) throw new Error('当前页面没有可导出的笔记。');
+        if (!exportData.notes.length) throw new Error(t('noPageNotesToExport'));
         if (format === 'json') {
             downloadTextFile(JSON.stringify(exportData, null, 2), `tavern-notes-lite-current-page-${stamp}.json`, 'application/json;charset=utf-8');
         }
@@ -3341,7 +3397,7 @@ async function exportNotes(format = 'json') {
     }
     await markLiteExported();
     closeExportMenu();
-    notify('已开始导出。', 'success');
+    notify(t('exportStarted'), 'success');
 }
 
 function openShareCard(note) {
@@ -3585,8 +3641,8 @@ async function importLocalShareCardFont(event) {
 function applyShareFontImport() {
     const style = document.querySelector('#tavern-notes-lite-share-font-style');
     if (!style) return;
-    const css = normalizeShareFontCss(state.shareCardSettings.fontImport || '');
-    if (!css || /<\/?script/i.test(css)) {
+    const css = sanitizeShareFontCss(state.shareCardSettings.fontImport || '');
+    if (!css) {
         style.textContent = '';
         return;
     }
@@ -3600,14 +3656,17 @@ async function buildShareFontCss(raw) {
     if (url) {
         try {
             const response = await fetch(url);
-            if (response.ok) remoteCss = await response.text();
+            if (response.ok) remoteCss = resolveShareFontCssUrls(await response.text(), url);
         } catch {
             remoteCss = '';
         }
     }
-    const family = parseShareFontFamilyFromCss(normalized) || parseShareFontFamilyFromCss(remoteCss);
+    const safeCss = sanitizeShareFontCss(`${normalized}\n${remoteCss}`);
+    const family = parseShareFontFamilyFromCss(safeCss)
+        || parseShareFontFamilyFromCss(normalized)
+        || parseShareFontFamilyFromCss(remoteCss);
     return [
-        normalized,
+        safeCss,
         family ? `.tavern-notes-lite-share-font-probe { font-family: ${family}; }` : '',
     ].filter(Boolean).join('\n');
 }
@@ -3624,6 +3683,26 @@ function normalizeShareFontCss(value) {
             return line;
         })
         .join('\n');
+}
+
+function sanitizeShareFontCss(value) {
+    const css = String(value || '').replace(/\/\*[\s\S]*?\*\//g, '');
+    const rules = css.match(/@font-face\s*\{[^{}]*\}/gi) || [];
+    return rules
+        .filter(rule => !/<\/?script|javascript\s*:|expression\s*\(/i.test(rule))
+        .join('\n');
+}
+
+function resolveShareFontCssUrls(value, stylesheetUrl) {
+    return String(value || '').replace(/url\(\s*(['"]?)([^'"\)]+)\1\s*\)/gi, (match, quote, rawUrl) => {
+        const fontUrl = String(rawUrl || '').trim();
+        if (!fontUrl || /^(?:data:|blob:|https?:|\/\/|#)/i.test(fontUrl)) return match;
+        try {
+            return `url("${new URL(fontUrl, stylesheetUrl).href}")`;
+        } catch {
+            return match;
+        }
+    });
 }
 
 function extractShareFontCssUrl(css) {
@@ -4236,18 +4315,18 @@ async function downloadShareCard() {
     await drawShareCard();
     const canvas = document.querySelector('#tavern-notes-lite-share-canvas');
     const note = state.shareCardNote;
-    if (!canvas || !note) throw new Error('没有可导出的分享卡。');
+    if (!canvas || !note) throw new Error(t('noShareCardToExport'));
     const stamp = new Date().toISOString().slice(0, 10);
     const character = (note.character?.name || '未命名角色').replace(/[\\/:*?"<>|]/g, '_');
     canvas.toBlob(blob => {
         if (!blob) {
-            notify('生成图片失败。', 'error');
+            notify(t('shareCardExportFailed'), 'error');
             return;
         }
         const url = URL.createObjectURL(blob);
         exportFile(url, `${t('brandForShare')}-${character}-${stamp}.png`);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        notify('已导出分享卡。', 'success');
+        notify(t('shareCardExported'), 'success');
     }, 'image/png');
 }
 
@@ -4505,13 +4584,46 @@ function setDefaultIcon(target, src, extraClass = '') {
     const element = typeof target === 'string' ? document.querySelector(target) : target;
     if (!element) return;
     const current = element.querySelector('.tavern-notes-lite-default-icon');
-    if (current) {
+    if (current?.tagName === 'IMG') {
         current.src = src;
         current.className = `tavern-notes-lite-default-icon ${extraClass}`.trim();
+        updateDefaultIconContrast(current);
         return;
     }
+    current?.remove();
     element.querySelector('i')?.remove();
     element.insertAdjacentHTML('afterbegin', renderDefaultIcon(src, extraClass));
+    updateDefaultIconContrast(element.querySelector('.tavern-notes-lite-default-icon'));
+}
+
+function parseComputedRgb(value) {
+    const numbers = String(value || '').match(/[\d.]+/g)?.map(Number) || [];
+    if (numbers.length < 3 || numbers.slice(0, 3).some(number => !Number.isFinite(number))) return null;
+    return {
+        red: numbers[0],
+        green: numbers[1],
+        blue: numbers[2],
+        alpha: Number.isFinite(numbers[3]) ? numbers[3] : 1,
+    };
+}
+
+function getEffectiveIconBackground(icon) {
+    let element = icon?.parentElement;
+    while (element) {
+        const color = parseComputedRgb(getComputedStyle(element).backgroundColor);
+        if (color && color.alpha > 0.1) return color;
+        element = element.parentElement;
+    }
+    return null;
+}
+
+function updateDefaultIconContrast(icon) {
+    if (!(icon instanceof HTMLImageElement)) return;
+    const background = getEffectiveIconBackground(icon);
+    const brightness = background
+        ? (background.red * 299 + background.green * 587 + background.blue * 114) / 1000
+        : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 0 : 255);
+    icon.classList.toggle('tavern-notes-lite-default-icon-light', brightness < 148);
 }
 
 function updateThemeIcons(theme = state.theme) {
@@ -4520,6 +4632,9 @@ function updateThemeIcons(theme = state.theme) {
     setDefaultIcon('#tavern-notes-lite-capture', DEFAULT_CAPTURE_ICON_URL, 'qr--button-icon');
     setDefaultIcon('#tavern-notes-lite-floating-open', DEFAULT_OPEN_ICON_URL);
     setDefaultIcon('#tavern-notes-lite-floating-capture', DEFAULT_CAPTURE_ICON_URL);
+    requestAnimationFrame(() => {
+        document.querySelectorAll('.tavern-notes-lite-default-icon').forEach(updateDefaultIconContrast);
+    });
 }
 
 async function loadTheme() {
@@ -4794,6 +4909,7 @@ function fullExtensionIsActive() {
 function disableLiteForFull() {
     if (state.disabledByFull) return;
     state.disabledByFull = true;
+    removeMobileViewportGuard();
     stopFloorCaptureWatcher();
     state.qrBarObserver?.disconnect();
     state.qrBarObserver = null;
@@ -4839,8 +4955,10 @@ async function init() {
         return;
     }
     state.initialized = true;
+    installMobileViewportGuard();
     await openLiteDatabase();
     buildPanel();
+    applyShareFontImport();
     await loadTheme();
     addInputToolbar();
     watchQuickReplyBar();
