@@ -95,6 +95,11 @@ function sanitizeImportedFonts(fonts) {
         .slice(0, 16);
 }
 
+function normalizeInputIgnoreRules(value) {
+    const items = Array.isArray(value) ? value : String(value || '').split(/\r?\n/);
+    return [...new Set(items.map(item => String(item || '').trim()).filter(Boolean))].slice(0, 1000);
+}
+
 const state = {
     initialized: false,
     disabledByFull: false,
@@ -136,12 +141,16 @@ const state = {
     exportScope: 'all',
     launcherMode: savedLauncherMode,
     autoCaptureUserInput: localSettings.autoCaptureUserInput !== false,
+    collapseRepeatedUserInput: localSettings.collapseRepeatedUserInput !== false,
+    userInputIgnoreExact: normalizeInputIgnoreRules(localSettings.userInputIgnoreExact),
+    userInputIgnorePrefixes: normalizeInputIgnoreRules(localSettings.userInputIgnorePrefixes),
     showSelectionCaptureButton: localSettings.showSelectionCaptureButton !== false,
     showFloorCaptureButton: localSettings.showFloorCaptureButton !== false,
     floorCaptureSelector: !localSettings.floorCaptureSelector || localSettings.floorCaptureSelector === LEGACY_FLOOR_CAPTURE_SELECTOR
         ? DEFAULT_FLOOR_CAPTURE_SELECTOR
         : localSettings.floorCaptureSelector,
     appleGlassMode: localSettings.appleGlassMode === 'night' ? 'night' : 'day',
+    pendingUserInputDedupeIds: [],
     shareCardNote: null,
     shareCardSettings: {
         theme: savedShareTheme,
@@ -365,6 +374,8 @@ const TEXT_ZH_CN = {
     autoCaptureUserInputTitle: '自动记录发送出去的 User 输入',
     autoCaptureUserInputOn: '已开启自动记录 User 输入。',
     autoCaptureUserInputOff: '已关闭自动记录 User 输入。',
+    userInputCleanup: '输入整理', userInputCleanupTitle: '重复输入与忽略规则', userInputCleanupIntro: '连续相同输入会折叠为一条；每行可填写一条不需要记录的固定指令。', collapseRepeatedInput: '折叠连续重复输入', collapseRepeatedHelp: '保留一条笔记，并显示累计重复次数。', ignoreExactLabel: '完全匹配时忽略', ignoreExactPlaceholder: '每行一条，例如：继续', ignorePrefixLabel: '以这些文字开头时忽略', ignorePrefixPlaceholder: '每行一条，例如：/qr', saveInputRules: '保存规则', inputRulesSaved: '输入整理规则已保存。', scanDuplicates: '扫描历史重复', scanNoDuplicates: '没有发现可清理的连续重复输入。', scanPreview: '发现 {groups} 组、共 {duplicateNotes} 条可合并的重复输入。', cleanupConfirm: '确认清理吗？建议先导出一份备份。', cleanupDone: '已合并 {duplicateNotes} 条历史重复输入。', repeatedTimes: '重复 {count} 次',
+    addInputRules: '添加规则', filterInputRules: '搜索规则', noInputRules: '暂无规则', clearHistoryDuplicates: '清除历史重复', dedupeOccurrences: '共 {count} 条，将移除 {duplicates} 条', confirmCleanup: '确认清理这些条目', cancelCleanup: '取消',
     selectionCaptureButton: '选区按钮',
     selectionCaptureButtonTitle: '选中文字后显示浮动摘录按钮',
     selectionCaptureButtonOn: '已开启选区浮动摘录按钮。',
@@ -548,6 +559,8 @@ const TEXTS = {
         autoCaptureUserInputTitle: '自動記錄送出的 User 輸入',
         autoCaptureUserInputOn: '已開啟自動記錄 User 輸入。',
         autoCaptureUserInputOff: '已關閉自動記錄 User 輸入。',
+        userInputCleanup: '輸入整理', userInputCleanupTitle: '重複輸入與忽略規則', userInputCleanupIntro: '連續相同輸入會折疊成一則；每行可填寫一條不需記錄的固定指令。', collapseRepeatedInput: '折疊連續重複輸入', collapseRepeatedHelp: '保留一則筆記，並顯示累計重複次數。', ignoreExactLabel: '完全符合時忽略', ignoreExactPlaceholder: '每行一條，例如：繼續', ignorePrefixLabel: '以這些文字開頭時忽略', ignorePrefixPlaceholder: '每行一條，例如：/qr', saveInputRules: '儲存規則', inputRulesSaved: '輸入整理規則已儲存。', scanDuplicates: '掃描歷史重複', scanNoDuplicates: '沒有發現可清理的連續重複輸入。', scanPreview: '發現 {groups} 組、共 {duplicateNotes} 則可合併的重複輸入。', cleanupConfirm: '確認清理嗎？建議先匯出一份備份。', cleanupDone: '已合併 {duplicateNotes} 則歷史重複輸入。', repeatedTimes: '重複 {count} 次',
+        addInputRules: '新增規則', filterInputRules: '搜尋規則', noInputRules: '暫無規則', clearHistoryDuplicates: '清除歷史重複', dedupeOccurrences: '共 {count} 條，將移除 {duplicates} 條', confirmCleanup: '確認清理這些項目', cancelCleanup: '取消',
         selectionCaptureButton: '選區按鈕',
         selectionCaptureButtonTitle: '選中文字後顯示浮動摘錄按鈕',
         selectionCaptureButtonOn: '已開啟選區浮動摘錄按鈕。',
@@ -771,6 +784,8 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         autoCaptureUserInputTitle: 'Automatically record sent User inputs',
         autoCaptureUserInputOn: 'Automatic User input recording is on.',
         autoCaptureUserInputOff: 'Automatic User input recording is off.',
+        userInputCleanup: 'Input cleanup', userInputCleanupTitle: 'Repeated inputs and ignore rules', userInputCleanupIntro: 'Consecutive identical inputs are collapsed. Add one fixed command per line to skip it.', collapseRepeatedInput: 'Collapse consecutive repeats', collapseRepeatedHelp: 'Keep one note and show its accumulated repeat count.', ignoreExactLabel: 'Ignore exact matches', ignoreExactPlaceholder: 'One per line, e.g. continue', ignorePrefixLabel: 'Ignore these prefixes', ignorePrefixPlaceholder: 'One per line, e.g. /qr', saveInputRules: 'Save rules', inputRulesSaved: 'Input cleanup rules saved.', scanDuplicates: 'Scan old duplicates', scanNoDuplicates: 'No consecutive duplicate inputs found.', scanPreview: 'Found {groups} groups with {duplicateNotes} duplicate inputs to merge.', cleanupConfirm: 'Clean them up now? Exporting a backup first is recommended.', cleanupDone: 'Merged {duplicateNotes} historical duplicate inputs.', repeatedTimes: 'Repeated {count} times',
+        addInputRules: 'Add rules', filterInputRules: 'Search rules', noInputRules: 'No rules yet', clearHistoryDuplicates: 'Clear historical duplicates', dedupeOccurrences: '{count} entries; {duplicates} will be removed', confirmCleanup: 'Confirm cleanup', cancelCleanup: 'Cancel',
         selectionCaptureButton: 'Selection button',
         selectionCaptureButtonTitle: 'Show a floating capture button after selecting text',
         selectionCaptureButtonOn: 'Floating selection capture button is on.',
@@ -1486,6 +1501,9 @@ function saveLocalSettings() {
         language: state.language,
         launcherMode: state.launcherMode,
         autoCaptureUserInput: state.autoCaptureUserInput,
+        collapseRepeatedUserInput: state.collapseRepeatedUserInput,
+        userInputIgnoreExact: state.userInputIgnoreExact,
+        userInputIgnorePrefixes: state.userInputIgnorePrefixes,
         showSelectionCaptureButton: state.showSelectionCaptureButton,
         showFloorCaptureButton: state.showFloorCaptureButton,
         floorCaptureSelector: state.floorCaptureSelector,
@@ -1658,6 +1676,84 @@ function closeFloorCaptureMenu() {
     if (!menu) return;
     menu.classList.remove('open');
     menu.setAttribute('aria-hidden', 'true');
+}
+
+function syncUserInputCleanupControls() {
+    const collapse = document.querySelector('#tavern-notes-lite-collapse-repeated-input');
+    if (collapse) collapse.checked = state.collapseRepeatedUserInput;
+    renderInputRuleLists();
+}
+
+function inputRuleStateKey(kind) { return kind === 'prefix' ? 'userInputIgnorePrefixes' : 'userInputIgnoreExact'; }
+function renderInputRuleLists() {
+    const query = String(document.querySelector('#tavern-notes-lite-input-rule-search')?.value || '').trim().toLocaleLowerCase();
+    for (const kind of ['exact', 'prefix']) {
+        const rules = state[inputRuleStateKey(kind)];
+        const visible = rules.filter(rule => !query || rule.toLocaleLowerCase().includes(query));
+        const count = document.querySelector(`[data-rule-count="${kind}"]`);
+        const list = document.querySelector(`[data-rule-list="${kind}"]`);
+        if (count) count.textContent = String(rules.length);
+        if (list) list.innerHTML = visible.length ? visible.map(rule => `<div class="tnl-input-rule-item"><span title="${htmlEscape(rule)}">${htmlEscape(rule)}</span><button type="button" data-rule-delete="${kind}" data-rule-value="${htmlEscape(rule)}" title="${htmlEscape(t('delete'))}"><i class="fa-solid fa-xmark"></i></button></div>`).join('') : `<div class="tnl-input-rule-empty">${htmlEscape(t('noInputRules'))}</div>`;
+    }
+}
+function addInputRules(kind) {
+    const input = document.querySelector(`[data-rule-input="${kind}"]`);
+    const additions = normalizeInputIgnoreRules(input?.value);
+    if (!additions.length) return;
+    const key = inputRuleStateKey(kind);
+    state[key] = normalizeInputIgnoreRules([...state[key], ...additions]);
+    if (input) input.value = '';
+    saveLocalSettings();
+    renderInputRuleLists();
+}
+function deleteInputRule(kind, value) {
+    const key = inputRuleStateKey(kind);
+    state[key] = state[key].filter(rule => rule !== value);
+    saveLocalSettings();
+    renderInputRuleLists();
+}
+
+function openUserInputCleanupMenu() {
+    const menu = document.querySelector('#tavern-notes-lite-user-input-cleanup-menu');
+    if (!menu) return;
+    syncUserInputCleanupControls();
+    menu.classList.add('open');
+    menu.setAttribute('aria-hidden', 'false');
+}
+
+function closeUserInputCleanupMenu() {
+    const menu = document.querySelector('#tavern-notes-lite-user-input-cleanup-menu');
+    if (!menu) return;
+    menu.classList.remove('open');
+    menu.setAttribute('aria-hidden', 'true');
+}
+
+function saveUserInputCleanupSettings() {
+    state.collapseRepeatedUserInput = document.querySelector('#tavern-notes-lite-collapse-repeated-input')?.checked !== false;
+    saveLocalSettings();
+    syncUserInputCleanupControls();
+    notify(t('inputRulesSaved'), 'success');
+}
+
+async function scanAndCleanupUserInputs() {
+    const preview = await api('/user-input-dedupe');
+    if (!preview.duplicateNotes) { closeUserInputDedupePreview(); return notify(t('scanNoDuplicates'), 'success'); }
+    const panel = document.querySelector('#tavern-notes-lite-input-dedupe-preview');
+    const summary = panel?.querySelector('.tnl-dedupe-preview-summary');
+    const list = panel?.querySelector('.tnl-dedupe-preview-list');
+    if (summary) summary.textContent = t('scanPreview', preview);
+    if (list) list.innerHTML = (preview.items || []).map(item => `<article class="tnl-dedupe-preview-item"><div><b>${htmlEscape(item.characterName || t('unnamedCharacter'))}</b><span>${htmlEscape(item.chatName || '')}</span><em>${htmlEscape(t('dedupeOccurrences', { count: item.occurrences, duplicates: item.duplicateNotes }))}</em></div><pre>${htmlEscape(item.content)}</pre></article>`).join('');
+    state.pendingUserInputDedupeIds = (preview.items || []).map(item => item.id);
+    panel?.classList.remove('tn-hidden');
+    panel?.scrollIntoView({ block: 'nearest' });
+}
+function closeUserInputDedupePreview() { document.querySelector('#tavern-notes-lite-input-dedupe-preview')?.classList.add('tn-hidden'); state.pendingUserInputDedupeIds = []; }
+async function applyUserInputDedupe() {
+    if (!state.pendingUserInputDedupeIds.length) return;
+    const result = await api('/user-input-dedupe', { method: 'POST', body: JSON.stringify({ ids: state.pendingUserInputDedupeIds }) });
+    closeUserInputDedupePreview();
+    notify(t('cleanupDone', result), 'success');
+    await refreshNotes();
 }
 
 function htmlEscape(value) {
@@ -2118,6 +2214,7 @@ function renderNoteArticles() {
                 ${renderVariantControls(note)}
                 <div class="tnl-note-topline">
                     <span class="tnl-note-type">${htmlEscape(noteTypeLabel(note.type))}</span>
+                    ${Number(activeNote.repeatCount || 1) > 1 ? `<span class="tnl-repeat-badge"><i class="fa-solid fa-repeat"></i>${htmlEscape(t('repeatedTimes', { count: activeNote.repeatCount }))}</span>` : ''}
                     <span class="tnl-note-character">${htmlEscape(note.character?.name || t('unnamedCharacter'))}</span>
                     <span class="tnl-note-muted">${htmlEscape(chatName)}</span>
                     <span class="tnl-note-muted">#${htmlEscape(messageId)}</span>
@@ -2611,6 +2708,8 @@ async function captureUserMessage(messageId) {
     const message = chat?.[messageId];
     if (!message || !message.is_user || !String(message.mes || '').trim()) return;
     const content = String(message.mes || '').trim();
+    if (state.userInputIgnoreExact.includes(content)
+        || state.userInputIgnorePrefixes.some(prefix => content.startsWith(prefix))) return;
     const cacheKey = `${getChatName()}::${messageId}`;
     if (messageId === state.lastCapturedMessageId && state.capturedUserInputs[cacheKey] === content) return;
     if (state.capturedUserInputs[cacheKey] === content) return;
@@ -2627,6 +2726,7 @@ async function captureUserMessage(messageId) {
             messageId,
         },
         source: 'message_sent',
+        collapseRepeated: state.collapseRepeatedUserInput,
     }).catch(error => notify(error.message, 'error'));
 }
 
@@ -2700,6 +2800,7 @@ function buildPanel() {
                     <button id="tavern-notes-lite-auto-user-input" class="tnl-soft-button ${state.autoCaptureUserInput ? 'active' : ''}" title="${htmlEscape(t('autoCaptureUserInputTitle'))}" aria-label="${htmlEscape(t('autoCaptureUserInputTitle'))}">
                         <i class="fa-solid fa-keyboard"></i><span>${htmlEscape(t('autoCaptureUserInput'))}</span>
                     </button>
+                    <button id="tavern-notes-lite-user-input-cleanup-open" class="tnl-soft-button" title="${htmlEscape(t('userInputCleanupTitle'))}" aria-label="${htmlEscape(t('userInputCleanupTitle'))}"><i class="fa-solid fa-filter-circle-xmark"></i><span>${htmlEscape(t('userInputCleanup'))}</span></button>
                     <button id="tavern-notes-lite-selection-capture-setting" class="tnl-soft-button ${state.showSelectionCaptureButton ? 'active' : ''}" title="${htmlEscape(t('selectionCaptureButtonTitle'))}" aria-label="${htmlEscape(t('selectionCaptureButtonTitle'))}">
                         <i class="fa-solid fa-highlighter"></i><span>${htmlEscape(t('selectionCaptureButton'))}</span>
                     </button>
@@ -2848,6 +2949,17 @@ function buildPanel() {
                     </details>
                 </div>
             </div>
+            <div id="tavern-notes-lite-user-input-cleanup-menu" aria-hidden="true">
+                <div class="tnl-user-input-cleanup-card">
+                    <button class="tnl-icon-button tnl-user-input-cleanup-close" title="${htmlEscape(t('close'))}" aria-label="${htmlEscape(t('close'))}"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="tnl-export-title">${htmlEscape(t('userInputCleanupTitle'))}</div><p class="tnl-floor-capture-intro">${htmlEscape(t('userInputCleanupIntro'))}</p>
+                    <label class="tnl-input-cleanup-toggle"><input id="tavern-notes-lite-collapse-repeated-input" type="checkbox" ${state.collapseRepeatedUserInput ? 'checked' : ''}><span><b>${htmlEscape(t('collapseRepeatedInput'))}</b><small>${htmlEscape(t('collapseRepeatedHelp'))}</small></span></label>
+                    <div class="tnl-input-rule-search"><i class="fa-solid fa-magnifying-glass"></i><input id="tavern-notes-lite-input-rule-search" type="search" placeholder="${htmlEscape(t('filterInputRules'))}"></div>
+                    <div class="tnl-input-rule-columns">${['exact', 'prefix'].map(kind => `<section class="tnl-input-rule-section"><div class="tnl-input-rule-heading"><b>${htmlEscape(t(kind === 'exact' ? 'ignoreExactLabel' : 'ignorePrefixLabel'))}</b><span data-rule-count="${kind}">0</span></div><div class="tnl-input-rule-add"><textarea data-rule-input="${kind}" rows="2" placeholder="${htmlEscape(t(kind === 'exact' ? 'ignoreExactPlaceholder' : 'ignorePrefixPlaceholder'))}"></textarea><button type="button" data-rule-add="${kind}" title="${htmlEscape(t('addInputRules'))}"><i class="fa-solid fa-plus"></i></button></div><div class="tnl-input-rule-list" data-rule-list="${kind}"></div></section>`).join('')}</div>
+                    <section id="tavern-notes-lite-input-dedupe-preview" class="tnl-dedupe-preview tn-hidden"><div class="tnl-dedupe-preview-summary"></div><div class="tnl-dedupe-preview-list"></div><div class="tnl-dedupe-preview-actions"><button id="tavern-notes-lite-input-dedupe-cancel" type="button">${htmlEscape(t('cancelCleanup'))}</button><button id="tavern-notes-lite-input-dedupe-confirm" type="button"><i class="fa-solid fa-broom"></i><span>${htmlEscape(t('confirmCleanup'))}</span></button></div></section>
+                    <div class="tnl-input-cleanup-actions"><button id="tavern-notes-lite-input-rules-save" class="tnl-soft-button"><i class="fa-solid fa-floppy-disk"></i><span>${htmlEscape(t('saveInputRules'))}</span></button><button id="tavern-notes-lite-input-dedupe-scan" class="tnl-history-cleanup-button"><i class="fa-solid fa-broom"></i><span>${htmlEscape(t('clearHistoryDuplicates'))}</span></button></div>
+                </div>
+            </div>
             <div id="tavern-notes-lite-theme-menu" aria-hidden="true">
                 <div class="tnl-theme-card">
                     <button class="tnl-icon-button tnl-theme-close" title="${htmlEscape(t('closeThemePanel'))}" aria-label="${htmlEscape(t('closeThemePanel'))}"><i class="fa-solid fa-xmark"></i></button>
@@ -2924,6 +3036,19 @@ function bindEvents() {
         toggleAppleThemeMode().catch(error => notify(error.message, 'error'));
     });
     document.querySelector('#tavern-notes-lite-auto-user-input')?.addEventListener('click', toggleAutoCaptureUserInput);
+    document.querySelector('#tavern-notes-lite-user-input-cleanup-open')?.addEventListener('click', openUserInputCleanupMenu);
+    document.querySelector('.tnl-user-input-cleanup-close')?.addEventListener('click', closeUserInputCleanupMenu);
+    document.querySelector('#tavern-notes-lite-input-rules-save')?.addEventListener('click', saveUserInputCleanupSettings);
+    document.querySelector('#tavern-notes-lite-input-rule-search')?.addEventListener('input', renderInputRuleLists);
+    document.querySelector('.tnl-user-input-cleanup-card')?.addEventListener('click', event => {
+        const add = event.target.closest?.('[data-rule-add]');
+        if (add) return addInputRules(add.dataset.ruleAdd);
+        const remove = event.target.closest?.('[data-rule-delete]');
+        if (remove) deleteInputRule(remove.dataset.ruleDelete, remove.dataset.ruleValue || '');
+    });
+    document.querySelector('#tavern-notes-lite-input-dedupe-scan')?.addEventListener('click', () => scanAndCleanupUserInputs().catch(error => notify(error.message, 'error')));
+    document.querySelector('#tavern-notes-lite-input-dedupe-cancel')?.addEventListener('click', closeUserInputDedupePreview);
+    document.querySelector('#tavern-notes-lite-input-dedupe-confirm')?.addEventListener('click', () => applyUserInputDedupe().catch(error => notify(error.message, 'error')));
     document.querySelector('#tavern-notes-lite-selection-capture-setting')?.addEventListener('click', toggleSelectionCaptureButtonSetting);
     document.querySelector('#tavern-notes-lite-floor-capture-open')?.addEventListener('click', openFloorCaptureMenu);
     document.querySelector('#tavern-notes-lite-floor-capture-setting')?.addEventListener('click', toggleFloorCaptureButtonSetting);
@@ -3010,6 +3135,9 @@ function bindEvents() {
     });
     document.querySelector('#tavern-notes-lite-floor-capture-menu')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-floor-capture-menu') closeFloorCaptureMenu();
+    });
+    document.querySelector('#tavern-notes-lite-user-input-cleanup-menu')?.addEventListener('click', event => {
+        if (event.target.id === 'tavern-notes-lite-user-input-cleanup-menu') closeUserInputCleanupMenu();
     });
     document.querySelector('#tavern-notes-lite-theme-menu')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-theme-menu') closeThemeMenu();

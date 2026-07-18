@@ -118,7 +118,39 @@ function cleanNote(input, seq, preserveIdentity = false) {
         },
         source: String(input?.source || ''),
         tags: normalizeTags(input?.tags),
+        repeatCount: Math.max(1, safeNumber(input?.repeatCount, 1)),
+        lastRepeatedAt: input?.lastRepeatedAt ? String(input.lastRepeatedAt) : null,
+        latestMessageId: Number.isFinite(Number(input?.latestMessageId))
+            ? Number(input.latestMessageId)
+            : (Number.isFinite(Number(input?.chat?.messageId)) ? Number(input.chat.messageId) : null),
     };
+}
+
+function normalizeRepeatContent(value) {
+    return String(value || '').trim().replace(/\r\n?/g, '\n');
+}
+
+function userInputContextKey(note) {
+    return [note?.character?.id ?? '', note?.character?.name ?? '', note?.chat?.id ?? '', note?.chat?.name ?? '']
+        .map(value => String(value).replaceAll('|', '\\|')).join('|');
+}
+
+function findUserInputDedupeGroups(notes) {
+    const groups = new Map();
+    const previousByContext = new Map();
+    for (const note of [...notes].sort((left, right) => safeNumber(left.seq) - safeNumber(right.seq))) {
+        if (note.type !== 'user_input') continue;
+        const contextKey = userInputContextKey(note);
+        const contentKey = normalizeRepeatContent(note.content);
+        const previous = previousByContext.get(contextKey);
+        if (previous && previous.contentKey === contentKey) {
+            if (!groups.has(previous.canonical.id)) groups.set(previous.canonical.id, { canonical: previous.canonical, duplicates: [] });
+            groups.get(previous.canonical.id).duplicates.push(note);
+            continue;
+        }
+        previousByContext.set(contextKey, { canonical: note, contentKey });
+    }
+    return Array.from(groups.values());
 }
 
 function variantGroupKey(note) {
@@ -247,6 +279,30 @@ function characterSummaries(notes) {
 
 async function addNote(payload) {
     const database = await openLiteDatabase();
+    if (payload?.type === 'user_input' && payload?.collapseRepeated !== false) {
+        const notes = await readAllNotes();
+        const contextKey = userInputContextKey(payload);
+        const previous = notes
+            .filter(note => note.type === 'user_input' && userInputContextKey(note) === contextKey)
+            .sort((left, right) => safeNumber(right.seq) - safeNumber(left.seq))[0];
+        if (previous && normalizeRepeatContent(previous.content) === normalizeRepeatContent(payload.content)) {
+            const repeatedAt = new Date().toISOString();
+            const updated = {
+                ...previous,
+                updatedAt: repeatedAt,
+                repeatCount: Math.max(1, safeNumber(previous.repeatCount, 1)) + 1,
+                lastRepeatedAt: repeatedAt,
+                latestMessageId: Number.isFinite(Number(payload?.chat?.messageId))
+                    ? Number(payload.chat.messageId)
+                    : (previous.latestMessageId ?? previous.chat?.messageId ?? null),
+            };
+            const transaction = database.transaction([NOTE_STORE, META_STORE], 'readwrite');
+            transaction.objectStore(NOTE_STORE).put(updated);
+            transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: repeatedAt });
+            await transactionDone(transaction);
+            return { note: updated, deduplicated: true };
+        }
+    }
     const nextSeq = safeNumber(await readMeta('nextSeq', 1), 1);
     const note = cleanNote(payload, nextSeq);
     const transaction = database.transaction([NOTE_STORE, META_STORE], 'readwrite');
@@ -254,7 +310,42 @@ async function addNote(payload) {
     transaction.objectStore(META_STORE).put({ key: 'nextSeq', value: nextSeq + 1 });
     transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: note.updatedAt });
     await transactionDone(transaction);
-    return note;
+    return { note, deduplicated: false };
+}
+
+async function dedupeUserInputs(apply = false, selectedIds = null) {
+    const notes = await readAllNotes();
+    const selected = Array.isArray(selectedIds) ? new Set(selectedIds.map(String)) : null;
+    const groups = findUserInputDedupeGroups(notes).filter(group => !selected || selected.has(String(group.canonical.id)));
+    const duplicateNotes = groups.reduce((total, group) => total + group.duplicates.length, 0);
+    const items = groups.map(group => ({
+        id: group.canonical.id,
+        content: group.canonical.content,
+        characterName: group.canonical.character?.name || '',
+        chatName: group.canonical.chat?.name || '',
+        occurrences: group.duplicates.length + 1,
+        duplicateNotes: group.duplicates.length,
+    }));
+    if (!apply || !duplicateNotes) return { groups: groups.length, duplicateNotes, remainingNotes: notes.length - duplicateNotes, items };
+    const updatedAt = new Date().toISOString();
+    const database = await openLiteDatabase();
+    const transaction = database.transaction([NOTE_STORE, META_STORE], 'readwrite');
+    const store = transaction.objectStore(NOTE_STORE);
+    for (const group of groups) {
+        const all = [group.canonical, ...group.duplicates];
+        const last = all[all.length - 1];
+        store.put({
+            ...group.canonical,
+            updatedAt,
+            repeatCount: all.reduce((total, note) => total + Math.max(1, safeNumber(note.repeatCount, 1)), 0),
+            lastRepeatedAt: last.lastRepeatedAt || last.updatedAt || last.createdAt || updatedAt,
+            latestMessageId: last.latestMessageId ?? last.chat?.messageId ?? null,
+        });
+        group.duplicates.forEach(note => store.delete(note.id));
+    }
+    transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: updatedAt });
+    await transactionDone(transaction);
+    return { groups: groups.length, duplicateNotes, remainingNotes: notes.length - duplicateNotes, items };
 }
 
 async function deleteNote(id) {
@@ -408,11 +499,12 @@ export async function liteApi(path, options = {}, user = 'default-user') {
     const method = String(options.method || 'GET').toUpperCase();
     if (url.pathname === '/status') {
         const notes = await readAllNotes();
-        return { ok: true, user, version: '0.1.1', totalNotes: notes.length, storage: 'IndexedDB' };
+        return { ok: true, user, version: '0.1.3', totalNotes: notes.length, storage: 'IndexedDB' };
     }
     if (url.pathname === '/notes' && method === 'POST') {
         const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
-        return { ok: true, note: await addNote(payload) };
+        const result = await addNote(payload);
+        return { ok: true, ...result };
     }
     if (url.pathname === '/notes' && method === 'GET') {
         const allNotes = await readAllNotes();
@@ -460,6 +552,13 @@ export async function liteApi(path, options = {}, user = 'default-user') {
     if (url.pathname.startsWith('/notes/') && method === 'DELETE') {
         await deleteNote(decodeURIComponent(url.pathname.slice('/notes/'.length)));
         return { ok: true };
+    }
+    if (url.pathname === '/user-input-dedupe' && method === 'GET') {
+        return { ok: true, ...await dedupeUserInputs(false) };
+    }
+    if (url.pathname === '/user-input-dedupe' && method === 'POST') {
+        const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
+        return { ok: true, ...await dedupeUserInputs(true, payload.ids) };
     }
     throw new Error(`Unsupported Tavern Notes Lite operation: ${method} ${url.pathname}`);
 }
