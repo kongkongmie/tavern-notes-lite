@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4
+
+- Added draggable floating launcher positioning with reset support.
+- Added manual USER inspiration notes and global tag renaming.
+- Reorganized the responsive toolbar into primary actions and an adaptive More menu.
+- Added a day/night switch for the default theme with a redesigned Twilight Blue night mode.
+- Refined narrow-screen icons, modal controls, note actions, tags, pagination, and Secret Files menu layering.
+
 ## 0.1.3
 
 - Added automatic collapsing for consecutive identical User inputs with preserved repeat counts.

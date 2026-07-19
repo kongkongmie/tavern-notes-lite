@@ -110,6 +110,7 @@ function cleanNote(input, seq, preserveIdentity = false) {
             id: input?.character?.id ?? null,
             name: String(input?.character?.name || '未命名角色'),
             avatar: input?.character?.avatar ?? null,
+            isUser: input?.character?.isUser === true,
         },
         chat: {
             id: input?.chat?.id ?? null,
@@ -139,7 +140,7 @@ function findUserInputDedupeGroups(notes) {
     const groups = new Map();
     const previousByContext = new Map();
     for (const note of [...notes].sort((left, right) => safeNumber(left.seq) - safeNumber(right.seq))) {
-        if (note.type !== 'user_input') continue;
+        if (note.type !== 'user_input' || note.source === 'manual_inspiration') continue;
         const contextKey = userInputContextKey(note);
         const contentKey = normalizeRepeatContent(note.content);
         const previous = previousByContext.get(contextKey);
@@ -260,6 +261,7 @@ function characterSummaries(notes) {
                 id: note.character?.id ?? null,
                 name: note.character?.name || '未命名角色',
                 avatar: note.character?.avatar ?? null,
+                isUser: note.character?.isUser === true,
                 total: 0,
                 userInput: 0,
                 excerpt: 0,
@@ -274,7 +276,7 @@ function characterSummaries(notes) {
         else item.manual += 1;
         if (String(note.createdAt || '') > item.latestAt) item.latestAt = note.createdAt;
     }
-    return Array.from(map.values()).sort((left, right) => String(right.latestAt).localeCompare(String(left.latestAt)));
+    return Array.from(map.values()).sort((left, right) => Number(right.isUser) - Number(left.isUser) || String(right.latestAt).localeCompare(String(left.latestAt)));
 }
 
 async function addNote(payload) {
@@ -396,6 +398,23 @@ async function removeTagFromAllNotes(tag) {
     transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: updatedAt });
     await transactionDone(transaction);
     return changed.length;
+}
+
+async function renameTagEverywhere(oldTag, newName) {
+    const oldKey = String(oldTag || '').trim().toLocaleLowerCase();
+    const newTag = normalizeTags([newName])[0] || '';
+    if (!oldKey || !newTag) throw new Error('Missing tag name.');
+    const notes = await readAllNotes();
+    const changed = notes.filter(note => normalizeTags(note.tags).some(item => item.toLocaleLowerCase() === oldKey));
+    if (!changed.length) return { newTag, updated: 0 };
+    const updatedAt = new Date().toISOString();
+    const database = await openLiteDatabase();
+    const transaction = database.transaction([NOTE_STORE, META_STORE], 'readwrite');
+    const store = transaction.objectStore(NOTE_STORE);
+    for (const note of changed) store.put({ ...note, tags: normalizeTags(note.tags.map(item => item.toLocaleLowerCase() === oldKey ? newTag : item)), updatedAt });
+    transaction.objectStore(META_STORE).put({ key: 'updatedAt', value: updatedAt });
+    await transactionDone(transaction);
+    return { newTag, updated: changed.length };
 }
 
 function summarizeTags(notes) {
@@ -543,6 +562,11 @@ export async function liteApi(path, options = {}, user = 'default-user') {
     if (url.pathname.startsWith('/tags/') && method === 'DELETE') {
         const tag = decodeURIComponent(url.pathname.slice('/tags/'.length));
         return { ok: true, tag, updated: await removeTagFromAllNotes(tag) };
+    }
+    if (url.pathname.startsWith('/tags/') && method === 'PATCH') {
+        const tag = decodeURIComponent(url.pathname.slice('/tags/'.length));
+        const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
+        return { ok: true, tag, ...await renameTagEverywhere(tag, payload.name) };
     }
     if (url.pathname.startsWith('/notes/') && method === 'PATCH') {
         const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});

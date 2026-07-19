@@ -41,6 +41,13 @@ const dedupePreview = await storage.liteApi('/user-input-dedupe');
 const legacyPreview = dedupePreview.items.find(item => item.content === 'legacy');
 const dedupeResult = await storage.liteApi('/user-input-dedupe', { method: 'POST', body: JSON.stringify({ ids: [legacyPreview.id] }) });
 const legacy = await storage.liteApi('/notes?q=legacy&limit=15&offset=0');
+const manualBase = { ...userBase, content: 'idea', source: 'manual_inspiration', collapseRepeated: false, tags: ['灵感笔记'], character: { id: 'tavern-notes-user', name: 'Tester', avatar: 'persona.png', isUser: true }, chat: { ...userBase.chat, messageId: null } };
+await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify(manualBase) });
+await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify(manualBase) });
+const previewAfterManual = await storage.liteApi('/user-input-dedupe');
+const renamed = await storage.liteApi(`/tags/${encodeURIComponent('灵感笔记')}`, { method: 'PATCH', body: JSON.stringify({ name: '剧情脑洞' }) });
+const renamedNotes = await storage.liteApi(`/notes?tag=${encodeURIComponent('剧情脑洞')}&limit=15&offset=0`);
+const renamedExport = await storage.getLiteExport('smoke-user');
 const characters = await storage.liteApi('/characters');
 const exported = await storage.getLiteExport('smoke-user');
 const info = await storage.getLiteStorageInfo();
@@ -53,15 +60,16 @@ const checks = {
     exactTagFilter: tagged.totalNotes === 1 && tagged.notes[0].id === 'full-1',
     tagSummary: tags.tags.some(tag => tag.name === 'Favorite' && tag.count === 1),
     tagDeletedEverywhere: removedTag.updated === 1 && afterTagDelete.notes.find(note => note.id === 'full-1')?.tags.join(',') === 'plot',
-    characterSummary: characters.characters.length === 1 && characters.characters[0].name === 'Alpha',
+    characterSummary: characters.characters.length === 2 && characters.characters[0].isUser === true && characters.characters.some(character => character.name === 'Alpha'),
     consecutiveCollapsed: firstInput.deduplicated === false && repeatedInput.deduplicated === true && repeatedInput.note.repeatCount === 2 && repeatedInput.note.latestMessageId === 11,
     breakStopsCollapse: afterBreak.deduplicated === false,
     historicalDedupe: dedupePreview.duplicateNotes === 2 && legacyPreview?.occurrences === 2 && dedupeResult.duplicateNotes === 1 && legacy.totalNotes === 3 && legacy.notes.find(note => note.content === 'legacy')?.repeatCount === 2 && legacy.notes.filter(note => note.content === 'legacy two').length === 2,
+    manualInspiration: previewAfterManual.duplicateNotes === 1 && renamed.updated === 2 && renamedExport.notes.filter(note => note.tags.includes('剧情脑洞')).length === 2 && renamedNotes.notes[0].character.isUser === true,
     compatibleExport: exported.format === 'tavern-notes-export'
-        && exported.notes.length === 9
+        && exported.notes.length === 11
         && exported.notes.find(note => note.id === 'full-1')?.content === 'alpha excerpt edited'
         && exported.notes.find(note => note.id === 'full-1')?.tags.join(',') === 'plot',
-    storageCount: info.count === 9 && info.approximateBytes > 0,
+    storageCount: info.count === 11 && info.approximateBytes > 0,
 };
 
 console.log(JSON.stringify({ first, duplicate, checks }, null, 2));

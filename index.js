@@ -23,7 +23,7 @@ import {
 
 const SETTINGS_KEY = 'tavern-notes-lite-settings';
 const UPDATE_NOTICE_KEY = 'tavern-notes-lite-update-notice';
-const EXTENSION_VERSION = '0.1.2';
+const EXTENSION_VERSION = '0.1.4';
 const REMOTE_MANIFEST_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/manifest.json';
 const THEME_STORAGE_KEY = 'tavern-notes-lite-themes';
 const ACTIVE_THEME_KEY = 'tavern-notes-lite-active-theme';
@@ -140,6 +140,8 @@ const state = {
     activeThemeId: 'default',
     exportScope: 'all',
     launcherMode: savedLauncherMode,
+    floatingPosition: localSettings.floatingPosition && typeof localSettings.floatingPosition === 'object' ? localSettings.floatingPosition : null,
+    floatingDragMoved: false,
     autoCaptureUserInput: localSettings.autoCaptureUserInput !== false,
     collapseRepeatedUserInput: localSettings.collapseRepeatedUserInput !== false,
     userInputIgnoreExact: normalizeInputIgnoreRules(localSettings.userInputIgnoreExact),
@@ -150,6 +152,7 @@ const state = {
         ? DEFAULT_FLOOR_CAPTURE_SELECTOR
         : localSettings.floorCaptureSelector,
     appleGlassMode: localSettings.appleGlassMode === 'night' ? 'night' : 'day',
+    defaultThemeMode: localSettings.defaultThemeMode === 'night' ? 'night' : 'day',
     pendingUserInputDedupeIds: [],
     shareCardNote: null,
     shareCardSettings: {
@@ -374,6 +377,7 @@ const TEXT_ZH_CN = {
     autoCaptureUserInputTitle: '自动记录发送出去的 User 输入',
     autoCaptureUserInputOn: '已开启自动记录 User 输入。',
     autoCaptureUserInputOff: '已关闭自动记录 User 输入。',
+    newNote: '新建笔记', captureTools: '摘录工具', more: '更多', inspirationTag: '灵感笔记', newNoteUserHelp: '笔记将归入当前 USER，并自动带上“灵感笔记”标签。', newNoteSaved: '灵感笔记已保存。', noteContentRequired: '请先填写笔记内容。', saveNote: '保存笔记', renameTag: '重命名标签', renameTagPrompt: '把标签“{tag}”重命名为：', tagRenamed: '已将“{oldTag}”重命名为“{newTag}”，更新 {count} 条笔记。', resetFloatingPosition: '重置悬浮球位置',
     userInputCleanup: '输入整理', userInputCleanupTitle: '重复输入与忽略规则', userInputCleanupIntro: '连续相同输入会折叠为一条；每行可填写一条不需要记录的固定指令。', collapseRepeatedInput: '折叠连续重复输入', collapseRepeatedHelp: '保留一条笔记，并显示累计重复次数。', ignoreExactLabel: '完全匹配时忽略', ignoreExactPlaceholder: '每行一条，例如：继续', ignorePrefixLabel: '以这些文字开头时忽略', ignorePrefixPlaceholder: '每行一条，例如：/qr', saveInputRules: '保存规则', inputRulesSaved: '输入整理规则已保存。', scanDuplicates: '扫描历史重复', scanNoDuplicates: '没有发现可清理的连续重复输入。', scanPreview: '发现 {groups} 组、共 {duplicateNotes} 条可合并的重复输入。', cleanupConfirm: '确认清理吗？建议先导出一份备份。', cleanupDone: '已合并 {duplicateNotes} 条历史重复输入。', repeatedTimes: '重复 {count} 次',
     addInputRules: '添加规则', filterInputRules: '搜索规则', noInputRules: '暂无规则', clearHistoryDuplicates: '清除历史重复', dedupeOccurrences: '共 {count} 条，将移除 {duplicates} 条', confirmCleanup: '确认清理这些条目', cancelCleanup: '取消',
     selectionCaptureButton: '选区按钮',
@@ -398,6 +402,11 @@ const TEXT_ZH_CN = {
     appleThemeModeTitle: '切换 Apple Glass 日夜主题',
     appleThemeDay: '切换到 Apple 日间',
     appleThemeNight: '切换到 Apple 夜间',
+    defaultThemeDay: '切换到柔光日间',
+    defaultThemeNight: '切换到暮蓝夜间',
+    defaultThemeModeTitle: '切换默认主题的日间 / 夜间模式',
+    defaultThemeDayOn: '已切换到柔光日间。',
+    defaultThemeNightOn: '已切换到暮蓝夜间。',
     appleThemeEnabled: '已切换 Apple Glass 主题。',
     previewTheme: '预览：{name}',
     unnamedTheme: '未命名主题',
@@ -559,6 +568,7 @@ const TEXTS = {
         autoCaptureUserInputTitle: '自動記錄送出的 User 輸入',
         autoCaptureUserInputOn: '已開啟自動記錄 User 輸入。',
         autoCaptureUserInputOff: '已關閉自動記錄 User 輸入。',
+        newNote: '新增筆記', captureTools: '摘錄工具', more: '更多', inspirationTag: '靈感筆記', newNoteUserHelp: '筆記將歸入目前 USER，並自動帶上「靈感筆記」標籤。', newNoteSaved: '靈感筆記已儲存。', noteContentRequired: '請先填寫筆記內容。', saveNote: '儲存筆記', renameTag: '重新命名標籤', renameTagPrompt: '將標籤「{tag}」重新命名為：', tagRenamed: '已將「{oldTag}」重新命名為「{newTag}」，更新 {count} 則筆記。', resetFloatingPosition: '重設懸浮球位置',
         userInputCleanup: '輸入整理', userInputCleanupTitle: '重複輸入與忽略規則', userInputCleanupIntro: '連續相同輸入會折疊成一則；每行可填寫一條不需記錄的固定指令。', collapseRepeatedInput: '折疊連續重複輸入', collapseRepeatedHelp: '保留一則筆記，並顯示累計重複次數。', ignoreExactLabel: '完全符合時忽略', ignoreExactPlaceholder: '每行一條，例如：繼續', ignorePrefixLabel: '以這些文字開頭時忽略', ignorePrefixPlaceholder: '每行一條，例如：/qr', saveInputRules: '儲存規則', inputRulesSaved: '輸入整理規則已儲存。', scanDuplicates: '掃描歷史重複', scanNoDuplicates: '沒有發現可清理的連續重複輸入。', scanPreview: '發現 {groups} 組、共 {duplicateNotes} 則可合併的重複輸入。', cleanupConfirm: '確認清理嗎？建議先匯出一份備份。', cleanupDone: '已合併 {duplicateNotes} 則歷史重複輸入。', repeatedTimes: '重複 {count} 次',
         addInputRules: '新增規則', filterInputRules: '搜尋規則', noInputRules: '暫無規則', clearHistoryDuplicates: '清除歷史重複', dedupeOccurrences: '共 {count} 條，將移除 {duplicates} 條', confirmCleanup: '確認清理這些項目', cancelCleanup: '取消',
         selectionCaptureButton: '選區按鈕',
@@ -583,6 +593,11 @@ const TEXTS = {
         appleThemeModeTitle: '切換 Apple Glass 日夜主題',
         appleThemeDay: '切換到 Apple 日間',
         appleThemeNight: '切換到 Apple 夜間',
+        defaultThemeDay: '切換到柔光日間',
+        defaultThemeNight: '切換到暮藍夜間',
+        defaultThemeModeTitle: '切換預設主題的日間 / 夜間模式',
+        defaultThemeDayOn: '已切換到柔光日間。',
+        defaultThemeNightOn: '已切換到暮藍夜間。',
         appleThemeEnabled: '已切換 Apple Glass 主題。',
         previewTheme: '預覽：{name}',
         unnamedTheme: '未命名主題',
@@ -784,6 +799,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         autoCaptureUserInputTitle: 'Automatically record sent User inputs',
         autoCaptureUserInputOn: 'Automatic User input recording is on.',
         autoCaptureUserInputOff: 'Automatic User input recording is off.',
+        newNote: 'New note', captureTools: 'Capture tools', more: 'More', inspirationTag: 'Inspiration', newNoteUserHelp: 'This note will belong to the current USER and include the Inspiration tag.', newNoteSaved: 'Inspiration note saved.', noteContentRequired: 'Enter note content first.', saveNote: 'Save note', renameTag: 'Rename tag', renameTagPrompt: 'Rename “{tag}” to:', tagRenamed: 'Renamed “{oldTag}” to “{newTag}” on {count} notes.', resetFloatingPosition: 'Reset floating ball position',
         userInputCleanup: 'Input cleanup', userInputCleanupTitle: 'Repeated inputs and ignore rules', userInputCleanupIntro: 'Consecutive identical inputs are collapsed. Add one fixed command per line to skip it.', collapseRepeatedInput: 'Collapse consecutive repeats', collapseRepeatedHelp: 'Keep one note and show its accumulated repeat count.', ignoreExactLabel: 'Ignore exact matches', ignoreExactPlaceholder: 'One per line, e.g. continue', ignorePrefixLabel: 'Ignore these prefixes', ignorePrefixPlaceholder: 'One per line, e.g. /qr', saveInputRules: 'Save rules', inputRulesSaved: 'Input cleanup rules saved.', scanDuplicates: 'Scan old duplicates', scanNoDuplicates: 'No consecutive duplicate inputs found.', scanPreview: 'Found {groups} groups with {duplicateNotes} duplicate inputs to merge.', cleanupConfirm: 'Clean them up now? Exporting a backup first is recommended.', cleanupDone: 'Merged {duplicateNotes} historical duplicate inputs.', repeatedTimes: 'Repeated {count} times',
         addInputRules: 'Add rules', filterInputRules: 'Search rules', noInputRules: 'No rules yet', clearHistoryDuplicates: 'Clear historical duplicates', dedupeOccurrences: '{count} entries; {duplicates} will be removed', confirmCleanup: 'Confirm cleanup', cancelCleanup: 'Cancel',
         selectionCaptureButton: 'Selection button',
@@ -808,6 +824,11 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         appleThemeModeTitle: 'Toggle Apple Glass day/night theme',
         appleThemeDay: 'Switch to Apple Day',
         appleThemeNight: 'Switch to Apple Night',
+        defaultThemeDay: 'Switch to Soft Day',
+        defaultThemeNight: 'Switch to Twilight Blue',
+        defaultThemeModeTitle: 'Switch the default theme between day and night',
+        defaultThemeDayOn: 'Soft Day enabled.',
+        defaultThemeNightOn: 'Twilight Blue enabled.',
         appleThemeEnabled: 'Apple Glass theme switched.',
         previewTheme: 'Preview: {name}',
         unnamedTheme: 'Untitled theme',
@@ -1009,6 +1030,7 @@ assets control the header icon and background image; the input-bar and capture b
         autoCaptureUserInputTitle: '보낸 User 입력을 자동 기록',
         autoCaptureUserInputOn: 'User 입력 자동 기록을 켰습니다.',
         autoCaptureUserInputOff: 'User 입력 자동 기록을 껐습니다.',
+        newNote: '새 노트', captureTools: '발췌 도구', more: '더보기', inspirationTag: '영감 노트', newNoteUserHelp: '현재 USER에 저장되며 영감 노트 태그가 자동으로 추가됩니다.', newNoteSaved: '영감 노트를 저장했습니다.', noteContentRequired: '노트 내용을 입력하세요.', saveNote: '노트 저장', renameTag: '태그 이름 변경', renameTagPrompt: '“{tag}” 태그의 새 이름:', tagRenamed: '“{oldTag}”을 “{newTag}”으로 변경하고 {count}개 노트를 업데이트했습니다.', resetFloatingPosition: '플로팅 버튼 위치 초기화',
         noNotesHintNoUserInput: '채팅 글을 선택한 뒤 “선택 발췌”를 눌러 발췌를 저장하세요.',
         noCharacterNotesHintNoUserInput: '발췌한 채팅 글은 캐릭터별로 여기에 정리됩니다.',
         fromTavernNotes: '술집 노트에서',
@@ -1168,6 +1190,46 @@ const DEFAULT_THEME = {
         backgroundImage: '',
         buttonImage: '',
     },
+};
+
+const DEFAULT_NIGHT_VARIABLES = {
+    '--tnl-paper': '#202832', '--tnl-paper-2': '#26313d', '--tnl-ink': '#edf1f2', '--tnl-muted': '#9eabb5',
+    '--tnl-line': 'rgba(171, 190, 202, 0.22)', '--tnl-gold': '#d7838f', '--tnl-gold-2': '#e8a2aa',
+    '--tnl-shadow-dark': 'rgba(6, 11, 17, 0.64)', '--tnl-shadow-light': 'rgba(86, 111, 128, 0.18)',
+    '--tnl-panel-border': 'rgba(178, 198, 210, 0.18)',
+    '--tnl-control-bg': 'linear-gradient(145deg, #2c3945 0%, #1d252e 100%)',
+    '--tnl-control-bg-hover': 'linear-gradient(145deg, rgba(215, 131, 143, 0.25), rgba(43, 56, 68, 0.98))',
+    '--tnl-control-inset-bg': 'linear-gradient(145deg, #19212a 0%, #2b3742 100%)',
+    '--tnl-control-inset-shadow': 'inset 7px 7px 15px rgba(5, 10, 15, 0.5), inset -7px -7px 15px rgba(91, 116, 132, 0.12)',
+    '--tnl-card-bg': 'linear-gradient(145deg, #2b3742 0%, #1d252e 100%)',
+    '--tnl-card-bg-active': 'radial-gradient(circle at 18% 22%, rgba(215, 131, 143, 0.28), transparent 34%), linear-gradient(145deg, #303d49 0%, #202933 100%)',
+    '--tnl-icon-bg': 'linear-gradient(145deg, #33414d 0%, #202933 100%)',
+    '--tnl-action-bg': 'linear-gradient(145deg, rgba(48, 61, 73, 0.98), rgba(28, 36, 44, 0.98))',
+    '--tnl-overlay-bg': 'rgba(17, 23, 30, 0.88)',
+    '--tnl-fade-bg': 'linear-gradient(90deg, rgba(38, 49, 61, 0), rgba(38, 49, 61, 0.9) 34%, #26313d)',
+    '--tnl-em': '#b5c0c8', '--tnl-underline': '#d7838f', '--tnl-quote': '#e8a2aa',
+    '--tnl-panel-glow': 'rgba(215, 131, 143, 0.18)', '--tnl-scrollbar-thumb': '#bd6f7b',
+    '--tnl-scrollbar-track': 'rgba(215, 131, 143, 0.1)',
+    '--tnl-mini-button-bg': 'linear-gradient(145deg, #33414d, #1f2831)',
+    '--tnl-mini-button-shadow': 'none',
+    '--tnl-mini-button-hover-bg': 'linear-gradient(145deg, #724752, #513640)',
+    '--tnl-mini-button-hover-shadow': 'none',
+    '--tnl-inline-action-bg': 'rgba(45, 58, 69, 0.55)', '--tnl-inline-action-hover-bg': 'rgba(215, 131, 143, 0.16)',
+    '--tnl-inline-action-shadow': 'none', '--tnl-inline-action-hover-shadow': 'none',
+    '--tnl-inline-icon-bg': 'linear-gradient(145deg, #34424e, #202933)',
+    '--tnl-inline-icon-shadow': 'none', '--tnl-inline-icon-hover-bg': 'rgba(73, 49, 57, 0.72)',
+    '--tnl-note-border': '1px solid rgba(178, 198, 210, 0.16)',
+    '--tnl-note-shadow': '14px 14px 28px rgba(5, 10, 15, 0.46), -10px -10px 24px rgba(91, 116, 132, 0.09)',
+    '--tnl-note-type-bg': 'linear-gradient(145deg, rgba(215, 131, 143, 0.3), rgba(82, 47, 56, 0.46))',
+    '--tnl-note-type-color': '#efb5bc',
+    '--tnl-note-type-user-bg': 'linear-gradient(145deg, rgba(215, 131, 143, 0.3), rgba(82, 47, 56, 0.46))',
+    '--tnl-note-type-user-color': '#efb5bc',
+    '--tnl-note-type-excerpt-bg': 'linear-gradient(145deg, rgba(103, 147, 174, 0.34), rgba(37, 57, 70, 0.72))',
+    '--tnl-note-type-excerpt-color': '#b9d5e4',
+    '--tnl-note-accent-excerpt': '#79a9c4',
+    '--tnl-filter-shadow': '12px 12px 24px rgba(5, 10, 15, 0.48), -9px -9px 20px rgba(91, 116, 132, 0.08)',
+    '--tnl-control-shadow': '9px 9px 18px rgba(5, 10, 15, 0.48), -7px -7px 16px rgba(91, 116, 132, 0.08)',
+    '--tnl-inset-light': 'rgba(112, 139, 156, 0.12)',
 };
 
 const FILTERS = [
@@ -1500,6 +1562,7 @@ function saveLocalSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
         language: state.language,
         launcherMode: state.launcherMode,
+        floatingPosition: state.floatingPosition,
         autoCaptureUserInput: state.autoCaptureUserInput,
         collapseRepeatedUserInput: state.collapseRepeatedUserInput,
         userInputIgnoreExact: state.userInputIgnoreExact,
@@ -1508,6 +1571,7 @@ function saveLocalSettings() {
         showFloorCaptureButton: state.showFloorCaptureButton,
         floorCaptureSelector: state.floorCaptureSelector,
         appleGlassMode: state.appleGlassMode,
+        defaultThemeMode: state.defaultThemeMode,
         currentUserName: state.currentUserName,
         recentTags: state.recentTags,
         shareCard: state.shareCardSettings,
@@ -1519,6 +1583,7 @@ function saveLanguageSetting(language) {
     saveLocalSettings();
     updateAutoCaptureUserInputButton();
     updateSelectionCaptureButtonSetting();
+    closeHeaderPopovers();
     updateFloorCaptureButtonSetting();
     updateFloorCaptureSelectorInput();
     updateAppleThemeModeButton();
@@ -1716,6 +1781,7 @@ function deleteInputRule(kind, value) {
 function openUserInputCleanupMenu() {
     const menu = document.querySelector('#tavern-notes-lite-user-input-cleanup-menu');
     if (!menu) return;
+    closeHeaderPopovers();
     syncUserInputCleanupControls();
     menu.classList.add('open');
     menu.setAttribute('aria-hidden', 'false');
@@ -1975,6 +2041,7 @@ function renderTagLibrary() {
             <button class="tnl-tag-library-item ${state.tagFilter === tag.name ? 'active' : ''}" type="button" data-tag="${htmlEscape(tag.name)}">
                 <i class="fa-solid fa-tag"></i><span>${htmlEscape(tag.name)}</span><small>${htmlEscape(tag.count)}</small>
             </button>
+            <button class="tnl-tag-rename" type="button" data-rename-tag="${htmlEscape(tag.name)}" data-tag-count="${htmlEscape(tag.count)}" title="${htmlEscape(t('renameTag'))}"><i class="fa-solid fa-pen"></i></button>
             <button class="tnl-tag-delete" type="button" data-delete-tag="${htmlEscape(tag.name)}" data-tag-count="${htmlEscape(tag.count)}" title="${htmlEscape(t('deleteTag'))}" aria-label="${htmlEscape(t('deleteTag'))}"><i class="fa-solid fa-trash-can"></i></button>
         </div>
     `).join('') : state.tags.length ? `<div class="tnl-tag-library-empty">${htmlEscape(t('noMatchingTags'))}</div>` : `
@@ -1997,6 +2064,7 @@ function renderTagLibrary() {
 function openTagLibrary() {
     const menu = document.querySelector('#tavern-notes-lite-tag-library');
     if (!menu) return;
+    closeHeaderPopovers();
     state.tagManagerQuery = '';
     const search = document.querySelector('#tavern-notes-lite-tag-search');
     if (search) search.value = '';
@@ -2024,6 +2092,16 @@ async function deleteTagEverywhere(tag, count) {
     notify(t('tagDeleted', { tag, count: result.updated ?? count }), 'success');
 }
 
+async function renameTagEverywhere(tag, count) {
+    const next = String(window.prompt(t('renameTagPrompt', { tag }), tag) || '').trim();
+    if (!next || normalizeTagKey(next) === normalizeTagKey(tag)) return;
+    const result = await api(`/tags/${encodeURIComponent(tag)}`, { method: 'PATCH', body: JSON.stringify({ name: next }) });
+    state.recentTags = state.recentTags.map(item => normalizeTagKey(item) === normalizeTagKey(tag) ? result.newTag : item);
+    if (normalizeTagKey(state.tagFilter) === normalizeTagKey(tag)) state.tagFilter = result.newTag;
+    saveLocalSettings(); await refreshNotes(); renderTagLibrary();
+    notify(t('tagRenamed', { oldTag: tag, newTag: result.newTag, count: result.updated ?? count }), 'success');
+}
+
 function setTagFilter(tag = '') {
     state.tagFilter = String(tag || '');
     if (state.tagFilter) rememberTag(state.tagFilter);
@@ -2045,6 +2123,7 @@ function updateArchiveReadingMode() {
 }
 
 function getCharacterAvatar(character) {
+    if (character?.isUser || character?.id === 'tavern-notes-user') return getShareCardUserAvatarUrl();
     const avatar = character?.avatar;
     if (!avatar || avatar === 'none') return '';
     try {
@@ -2121,7 +2200,8 @@ function renderCharacterOverview() {
     if (state.filter !== 'characters' || state.characterFilter) return '';
     const current = getCurrentCharacterSummary();
     const currentKey = getCharacterKey(current);
-    const restCharacters = state.characters.filter(character => getCharacterKey(character) !== currentKey);
+    const userCharacter = state.characters.find(character => character.isUser || character.id === 'tavern-notes-user');
+    const restCharacters = state.characters.filter(character => getCharacterKey(character) !== currentKey && character !== userCharacter);
 
     if (!state.characters.length && !current.name) {
         const emptyHint = state.autoCaptureUserInput ? t('noCharacterNotesHint') : t('noCharacterNotesHintNoUserInput');
@@ -2163,7 +2243,7 @@ function renderCharacterOverview() {
                 <span>${htmlEscape(t('currentCharacter'))}</span>
                 <small>${htmlEscape(t('priority'))}</small>
             </div>
-            <div class="tnl-character-featured">${renderCard(current, true)}</div>
+            <div class="tnl-character-featured">${userCharacter ? renderCard(userCharacter) : ''}${getCharacterKey(userCharacter) !== currentKey ? renderCard(current, true) : ''}</div>
             <div class="tnl-section-title">
                 <span>${htmlEscape(t('browseByCharacter'))}</span>
                 <small>${htmlEscape(t('characterCount', { count: state.characters.length }))}</small>
@@ -2366,6 +2446,30 @@ async function captureSelection() {
     });
     notify(t('captured'), 'success');
     dismissSelectionCaptureButton();
+}
+
+function getUserNoteCharacter() { return { id: 'tavern-notes-user', name: getShareCardUserName(), avatar: user_avatar || null, isUser: true }; }
+function openNewNoteMenu() {
+    const menu = document.querySelector('#tavern-notes-lite-new-note-menu');
+    const content = document.querySelector('#tavern-notes-lite-new-note-content');
+    const tags = document.querySelector('#tavern-notes-lite-new-note-tags');
+    if (!menu) return; closeHeaderPopovers(); if (content) content.value = ''; if (tags) tags.value = t('inspirationTag');
+    menu.classList.add('open'); menu.setAttribute('aria-hidden', 'false'); setTimeout(() => content?.focus(), 0);
+}
+function closeNewNoteMenu() { const menu = document.querySelector('#tavern-notes-lite-new-note-menu'); menu?.classList.remove('open'); menu?.setAttribute('aria-hidden', 'true'); }
+async function saveNewUserNote() {
+    const content = String(document.querySelector('#tavern-notes-lite-new-note-content')?.value || '').trim();
+    if (!content) return notify(t('noteContentRequired'), 'warning');
+    const tags = parseTagsInput(document.querySelector('#tavern-notes-lite-new-note-tags')?.value || t('inspirationTag'));
+    await saveNote({ type: 'user_input', content, tags, character: getUserNoteCharacter(), chat: { id: getChatName(), name: getChatName(), messageId: null }, source: 'manual_inspiration', collapseRepeated: false });
+    closeNewNoteMenu(); notify(t('newNoteSaved'), 'success'); await refreshNotes();
+}
+function closeHeaderPopovers() { document.querySelectorAll('.tnl-header-popover.open').forEach(menu => menu.classList.remove('open')); }
+function toggleHeaderPopover(id) {
+    const target = document.getElementById(id);
+    const shouldOpen = Boolean(target && !target.classList.contains('open'));
+    closeHeaderPopovers();
+    if (shouldOpen) target.classList.add('open');
 }
 
 function getMessageIdFromElement(messageElement) {
@@ -2794,25 +2898,12 @@ function buildPanel() {
                     </button>
                 </div>
                 <div class="tnl-header-actions">
-                    <button id="tavern-notes-lite-apple-mode-main" class="tnl-soft-button tnl-hidden" title="${htmlEscape(t('appleThemeModeTitle'))}" aria-label="${htmlEscape(t('appleThemeModeTitle'))}">
-                        <i class="fa-solid fa-moon"></i><span>${htmlEscape(t('appleThemeNight'))}</span>
-                    </button>
-                    <button id="tavern-notes-lite-auto-user-input" class="tnl-soft-button ${state.autoCaptureUserInput ? 'active' : ''}" title="${htmlEscape(t('autoCaptureUserInputTitle'))}" aria-label="${htmlEscape(t('autoCaptureUserInputTitle'))}">
-                        <i class="fa-solid fa-keyboard"></i><span>${htmlEscape(t('autoCaptureUserInput'))}</span>
-                    </button>
-                    <button id="tavern-notes-lite-user-input-cleanup-open" class="tnl-soft-button" title="${htmlEscape(t('userInputCleanupTitle'))}" aria-label="${htmlEscape(t('userInputCleanupTitle'))}"><i class="fa-solid fa-filter-circle-xmark"></i><span>${htmlEscape(t('userInputCleanup'))}</span></button>
-                    <button id="tavern-notes-lite-selection-capture-setting" class="tnl-soft-button ${state.showSelectionCaptureButton ? 'active' : ''}" title="${htmlEscape(t('selectionCaptureButtonTitle'))}" aria-label="${htmlEscape(t('selectionCaptureButtonTitle'))}">
-                        <i class="fa-solid fa-highlighter"></i><span>${htmlEscape(t('selectionCaptureButton'))}</span>
-                    </button>
-                    <button id="tavern-notes-lite-floor-capture-open" class="tnl-soft-button ${state.showFloorCaptureButton ? 'active' : ''}" title="${htmlEscape(t('floorCaptureEntryTitle'))}" aria-label="${htmlEscape(t('floorCaptureEntryTitle'))}">
-                        <i class="fa-solid fa-file-lines"></i><span>${htmlEscape(t('floorCaptureEntry'))}</span>
-                    </button>
-                    <button id="tavern-notes-lite-theme" class="tnl-soft-button" title="${htmlEscape(t('openThemePanel'))}" aria-label="${htmlEscape(t('openThemePanel'))}">
-                        <i class="fa-solid fa-palette"></i><span>${htmlEscape(t('theme'))}</span>
-                    </button>
-                    <button id="tavern-notes-lite-export" class="tnl-icon-button" title="${htmlEscape(t('exportNotes'))}" aria-label="${htmlEscape(t('exportNotes'))}">
-                        <i class="fa-solid fa-download"></i><span>${htmlEscape(t('exportNotes'))}</span>
-                    </button>
+                    <button id="tavern-notes-lite-new-note-open" class="tnl-soft-button"><i class="fa-solid fa-pen-to-square"></i><span>${htmlEscape(t('newNote'))}</span></button>
+                    <button id="tavern-notes-lite-selection-capture-setting" class="tnl-soft-button ${state.showSelectionCaptureButton ? 'active' : ''}" title="${htmlEscape(t('selectionCaptureButtonTitle'))}"><i class="fa-solid fa-highlighter"></i><span>${htmlEscape(t('captureSelected'))}</span></button>
+                    <button id="tavern-notes-lite-floor-capture-open" class="tnl-soft-button ${state.showFloorCaptureButton ? 'active' : ''}" title="${htmlEscape(t('floorCaptureEntryTitle'))}"><i class="fa-solid fa-file-lines"></i><span>${htmlEscape(t('captureFloor'))}</span></button>
+                    <button id="tavern-notes-lite-theme" class="tnl-soft-button" title="${htmlEscape(t('openThemePanel'))}"><i class="fa-solid fa-palette"></i><span>${htmlEscape(t('theme'))}</span></button>
+                    <button id="tavern-notes-lite-more-open" class="tnl-soft-button"><i class="fa-solid fa-ellipsis"></i><span>${htmlEscape(t('more'))}</span></button>
+                    <div id="tavern-notes-lite-more-menu" class="tnl-header-popover tnl-header-secondary"><button id="tavern-notes-lite-auto-user-input" class="tnl-soft-button ${state.autoCaptureUserInput ? 'active' : ''}" title="${htmlEscape(t('autoCaptureUserInputTitle'))}"><i class="fa-solid fa-keyboard"></i><span>${htmlEscape(t('autoCaptureUserInput'))}</span></button><button id="tavern-notes-lite-user-input-cleanup-open" class="tnl-soft-button" title="${htmlEscape(t('userInputCleanupIntro'))}"><i class="fa-solid fa-filter-circle-xmark"></i><span>${htmlEscape(t('userInputCleanup'))}</span></button><button id="tavern-notes-lite-export" class="tnl-soft-button" title="${htmlEscape(t('exportNotes'))}"><i class="fa-solid fa-download"></i><span>${htmlEscape(t('exportNotes'))}</span></button><button id="tavern-notes-lite-reset-floating" class="tnl-soft-button" title="${htmlEscape(t('resetFloatingPosition'))}"><i class="fa-solid fa-location-crosshairs"></i><span>${htmlEscape(t('resetFloatingPosition'))}</span></button><button id="tavern-notes-lite-apple-mode-main" class="tnl-soft-button tnl-hidden"><i class="fa-solid fa-moon"></i><span>${htmlEscape(t('appleThemeNight'))}</span></button></div>
                 </div>
             </header>
             <div class="tnl-search-row">
@@ -2845,6 +2936,7 @@ function buildPanel() {
                     <button id="tavern-notes-lite-page-jump" class="tnl-page-button">${htmlEscape(t('jumpPage'))}</button>
                 </div>
             </footer>
+            <div id="tavern-notes-lite-new-note-menu" aria-hidden="true"><form class="tnl-edit-card tnl-new-note-card"><button class="tnl-icon-button tnl-new-note-close" type="button"><i class="fa-solid fa-xmark"></i></button><div class="tnl-export-title">${htmlEscape(t('newNote'))}</div><p class="tnl-floor-capture-intro">${htmlEscape(t('newNoteUserHelp'))}</p><label class="tnl-edit-field"><span>${htmlEscape(t('noteContent'))}</span><textarea id="tavern-notes-lite-new-note-content" class="text_pole" maxlength="200000" required></textarea></label><label class="tnl-edit-field"><span>${htmlEscape(t('tags'))}</span><input id="tavern-notes-lite-new-note-tags" class="text_pole" value="${htmlEscape(t('inspirationTag'))}"></label><button class="menu_button tnl-new-note-save" type="submit"><i class="fa-solid fa-floppy-disk"></i><span>${htmlEscape(t('saveNote'))}</span></button></form></div>
             <div id="tavern-notes-lite-modal" aria-hidden="true">
                 <div class="tnl-modal-card">
                     <button class="tnl-icon-button tnl-modal-close" title="${htmlEscape(t('close'))}" aria-label="${htmlEscape(t('close'))}"><i class="fa-solid fa-xmark"></i></button>
@@ -3030,6 +3122,13 @@ function buildPanel() {
 }
 
 function bindEvents() {
+    window.addEventListener('resize', () => applyFloatingLauncherPosition(document.querySelector('#tavern-notes-lite-floating-launcher')), { passive: true });
+    document.querySelector('#tavern-notes-lite-new-note-open')?.addEventListener('click', openNewNoteMenu);
+    document.querySelector('#tavern-notes-lite-more-open')?.addEventListener('click', () => toggleHeaderPopover('tavern-notes-lite-more-menu'));
+    document.querySelector('#tavern-notes-lite-reset-floating')?.addEventListener('click', resetFloatingLauncherPosition);
+    document.querySelector('.tnl-new-note-close')?.addEventListener('click', closeNewNoteMenu);
+    document.querySelector('#tavern-notes-lite-new-note-menu')?.addEventListener('click', event => { if (event.target.id === 'tavern-notes-lite-new-note-menu') closeNewNoteMenu(); });
+    document.querySelector('#tavern-notes-lite-new-note-menu form')?.addEventListener('submit', event => { event.preventDefault(); saveNewUserNote().catch(error => notify(error.message, 'error')); });
     document.querySelector('#tavern-notes-lite-language')?.addEventListener('change', event => saveLanguageSetting(event.target.value));
     document.querySelector('#tavern-notes-lite-launcher-mode')?.addEventListener('click', toggleLauncherMode);
     document.querySelector('#tavern-notes-lite-apple-mode-main')?.addEventListener('click', () => {
@@ -3115,6 +3214,8 @@ function bindEvents() {
                 .catch(error => notify(error.message, 'error'));
             return;
         }
+        const renameButton = event.target.closest?.('[data-rename-tag]');
+        if (renameButton) { renameTagEverywhere(renameButton.dataset.renameTag || '', Number(renameButton.dataset.tagCount || 0)).catch(error => notify(error.message, 'error')); return; }
         const tag = event.target.closest?.('.tnl-tag-library-item');
         if (tag) {
             setTagFilter(tag.dataset.tag || '');
@@ -3350,6 +3451,7 @@ async function importNotesJson(event) {
 function toggleExportMenu() {
     const menu = document.querySelector('#tavern-notes-lite-export-menu');
     if (!menu) return;
+    closeHeaderPopovers();
     setExportScope(state.exportScope);
     menu.classList.toggle('open');
     menu.setAttribute('aria-hidden', menu.classList.contains('open') ? 'false' : 'true');
@@ -3371,6 +3473,7 @@ function setExportScope(scope = 'all') {
 function toggleThemeMenu() {
     const menu = document.querySelector('#tavern-notes-lite-theme-menu');
     if (!menu) return;
+    closeHeaderPopovers();
     if (menu.classList.contains('open')) {
         closeThemeMenu();
         return;
@@ -4592,7 +4695,8 @@ function normalizeTheme(theme) {
     return {
         ...DEFAULT_THEME,
         ...(theme || {}),
-        variables: {
+    variables: {
+        '--tnl-theme-flavor': 'default',
             ...DEFAULT_THEME.variables,
             ...toLiteThemeVariables(theme?.variables),
         },
@@ -4626,8 +4730,15 @@ function applyAppleGlassMode(theme) {
     };
 }
 
+function applyDefaultThemeMode(theme) {
+    const isDefault = normalizeAppleThemeId(state.activeThemeId) === 'default'
+        && String(theme?.variables?.['--tnl-theme-flavor'] || 'default').toLowerCase() === 'default';
+    if (!isDefault || state.defaultThemeMode !== 'night') return theme;
+    return { ...theme, variables: { ...theme.variables, ...DEFAULT_NIGHT_VARIABLES } };
+}
+
 function paintTheme(theme) {
-    const clean = applyAppleGlassMode(normalizeTheme(theme));
+    const clean = applyDefaultThemeMode(applyAppleGlassMode(normalizeTheme(theme)));
     const panel = document.querySelector('#tavern-notes-lite-panel');
     if (panel) {
         Object.entries(clean.variables).forEach(([key, value]) => {
@@ -4636,6 +4747,8 @@ function paintTheme(theme) {
         const flavor = String(clean.variables['--tnl-theme-flavor'] || '').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
         if (flavor) panel.dataset.themeFlavor = flavor;
         else delete panel.dataset.themeFlavor;
+        if (flavor === 'default') panel.dataset.themeMode = state.defaultThemeMode;
+        else delete panel.dataset.themeMode;
         if (flavor !== 'archive') panel.classList.remove('tnl-archive-reading');
         if (clean.assets.backgroundImage) {
             const image = String(clean.assets.backgroundImage).trim();
@@ -4681,19 +4794,30 @@ function updateAppleThemeModeButton() {
     ].filter(Boolean);
     if (!buttons.length) return;
     const isApple = isAppleThemeId();
-    const isNight = state.appleGlassMode === 'night';
+    const isDefault = normalizeAppleThemeId(state.activeThemeId) === 'default';
+    const isSupported = isApple || isDefault;
+    const isNight = isApple ? state.appleGlassMode === 'night' : state.defaultThemeMode === 'night';
     for (const button of buttons) {
-        button.classList.toggle('tnl-hidden', !isApple);
-        button.classList.toggle('active', isApple);
-        button.title = t('appleThemeModeTitle');
-        button.setAttribute('aria-label', t('appleThemeModeTitle'));
+        button.classList.toggle('tnl-hidden', !isSupported);
+        button.classList.toggle('active', isSupported && isNight);
+        const title = t(isApple ? 'appleThemeModeTitle' : 'defaultThemeModeTitle');
+        button.title = title;
+        button.setAttribute('aria-label', title);
         button.querySelector('i')?.classList.toggle('fa-sun', isNight);
         button.querySelector('i')?.classList.toggle('fa-moon', !isNight);
-        button.querySelector('span')?.replaceChildren(document.createTextNode(isNight ? t('appleThemeDay') : t('appleThemeNight')));
+        const labelKey = isApple ? (isNight ? 'appleThemeDay' : 'appleThemeNight') : (isNight ? 'defaultThemeDay' : 'defaultThemeNight');
+        button.querySelector('span')?.replaceChildren(document.createTextNode(t(labelKey)));
     }
 }
 
 async function toggleAppleThemeMode() {
+    if (normalizeAppleThemeId(state.activeThemeId) === 'default') {
+        state.defaultThemeMode = state.defaultThemeMode === 'night' ? 'day' : 'night';
+        saveLocalSettings();
+        applyTheme(DEFAULT_THEME);
+        notify(t(state.defaultThemeMode === 'night' ? 'defaultThemeNightOn' : 'defaultThemeDayOn'), 'success');
+        return;
+    }
     if (!isAppleThemeId()) {
         await activateTheme(APPLE_THEME_ID);
         return;
@@ -4892,6 +5016,23 @@ function watchChatMessages() {
     state.floorCaptureObserver.observe(chatContainer, { childList: true, subtree: true });
 }
 
+function applyFloatingLauncherPosition(launcher) {
+    if (!launcher || !state.floatingPosition) return;
+    const x = Math.min(Math.max(8, Number(state.floatingPosition.x || 8)), Math.max(8, window.innerWidth - launcher.offsetWidth - 8));
+    const y = Math.min(Math.max(8, Number(state.floatingPosition.y || 8)), Math.max(8, window.innerHeight - launcher.offsetHeight - 8));
+    launcher.style.left = `${x}px`; launcher.style.top = `${y}px`; launcher.style.right = 'auto'; launcher.style.bottom = 'auto'; launcher.style.transform = 'none';
+}
+function bindFloatingLauncherDrag(launcher) {
+    if (!launcher || launcher.dataset.dragBound) return; launcher.dataset.dragBound = 'true';
+    launcher.addEventListener('pointerdown', event => {
+        if (event.button !== undefined && event.button !== 0) return;
+        const rect = launcher.getBoundingClientRect(); const sx = event.clientX; const sy = event.clientY; const ox = sx - rect.left; const oy = sy - rect.top;
+        state.floatingDragMoved = false;
+        const move = e => { if (Math.hypot(e.clientX - sx, e.clientY - sy) > 5) state.floatingDragMoved = true; if (!state.floatingDragMoved) return; const x = Math.min(Math.max(8, e.clientX - ox), window.innerWidth - launcher.offsetWidth - 8); const y = Math.min(Math.max(8, e.clientY - oy), window.innerHeight - launcher.offsetHeight - 8); launcher.style.left = `${x}px`; launcher.style.top = `${y}px`; launcher.style.right = 'auto'; launcher.style.bottom = 'auto'; launcher.style.transform = 'none'; e.preventDefault(); };
+        const up = e => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); if (!state.floatingDragMoved) return; const r = launcher.getBoundingClientRect(); state.floatingPosition = { x: r.left + r.width / 2 < window.innerWidth / 2 ? 8 : window.innerWidth - r.width - 8, y: r.top }; applyFloatingLauncherPosition(launcher); saveLocalSettings(); setTimeout(() => { state.floatingDragMoved = false; }, 0); e.preventDefault(); };
+        window.addEventListener('pointermove', move, { passive: false }); window.addEventListener('pointerup', up, { passive: false }); window.addEventListener('pointercancel', up, { passive: false });
+    });
+}
 function updateFloatingLauncher() {
     let launcher = document.querySelector('#tavern-notes-lite-floating-launcher');
     if (state.launcherMode !== 'floating') {
@@ -4911,11 +5052,14 @@ function updateFloatingLauncher() {
         `;
         document.body.append(launcher);
         document.querySelector('#tavern-notes-lite-floating-open')?.addEventListener('click', () => {
+            if (state.floatingDragMoved) return;
             if (state.open) closePanel();
             else openPanel();
         });
-        document.querySelector('#tavern-notes-lite-floating-capture')?.addEventListener('click', () => captureSelection().catch(error => notify(error.message, 'error')));
+        document.querySelector('#tavern-notes-lite-floating-capture')?.addEventListener('click', () => { if (!state.floatingDragMoved) captureSelection().catch(error => notify(error.message, 'error')); });
     }
+    bindFloatingLauncherDrag(launcher);
+    requestAnimationFrame(() => applyFloatingLauncherPosition(launcher));
     launcher.querySelector('#tavern-notes-lite-floating-open')?.setAttribute('title', t('openNotes'));
     launcher.querySelector('#tavern-notes-lite-floating-open')?.setAttribute('aria-label', t('openNotes'));
     launcher.querySelector('#tavern-notes-lite-floating-capture')?.setAttribute('title', t('captureSelectedTitle'));
@@ -4931,6 +5075,8 @@ function toggleLauncherMode() {
     updateLauncherModeButton();
     notify(state.launcherMode === 'floating' ? t('floatingLauncherShown') : t('toolbarLauncherShown'), 'success');
 }
+
+function resetFloatingLauncherPosition() { state.floatingPosition = null; saveLocalSettings(); const launcher = document.querySelector('#tavern-notes-lite-floating-launcher'); if (launcher) { launcher.style.removeProperty('left'); launcher.style.removeProperty('top'); launcher.style.removeProperty('right'); launcher.style.removeProperty('bottom'); launcher.style.removeProperty('transform'); } }
 
 function addInputToolbar() {
     updateLauncherModeButton();
