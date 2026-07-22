@@ -1,0 +1,53 @@
+{
+  "format": "tavern-notes-export",
+  "version": 1,
+  "exportedAt": "2026-07-21T00:00:00.000Z",
+  "user": "synthetic-contract-test",
+  "notes": [
+    {
+      "id": "contract-excerpt",
+      "seq": 1,
+      "type": "excerpt",
+      "content": "Synthetic excerpt for Full/Lite compatibility.",
+      "createdAt": "2026-07-21T00:01:00.000Z",
+      "updatedAt": "2026-07-21T00:01:00.000Z",
+      "character": { "id": "char-1", "name": "Test Character", "avatar": null, "isUser": false },
+      "chat": { "id": "chat-1", "name": "Synthetic Chat", "messageId": 7 },
+      "source": "selection",
+      "tags": ["Plot", "clue", "plot"],
+      "repeatCount": 1,
+      "lastRepeatedAt": null,
+      "latestMessageId": 7
+    },
+    {
+      "id": "contract-repeat",
+      "seq": 2,
+      "type": "user_input",
+      "content": "Synthetic repeated input.",
+      "createdAt": "2026-07-21T00:02:00.000Z",
+      "updatedAt": "2026-07-21T00:03:00.000Z",
+      "character": { "id": "char-1", "name": "Test Character", "avatar": null, "isUser": false },
+      "chat": { "id": "chat-1", "name": "Synthetic Chat", "messageId": 8 },
+      "source": "message_sent",
+      "tags": ["repeat"],
+      "repeatCount": 3,
+      "lastRepeatedAt": "2026-07-21T00:03:00.000Z",
+      "latestMessageId": 10
+    },
+    {
+      "id": "contract-manual",
+      "seq": 3,
+      "type": "manual",
+      "content": "Synthetic manual inspiration note.",
+      "createdAt": "2026-07-21T00:04:00.000Z",
+      "updatedAt": "2026-07-21T00:04:00.000Z",
+      "character": { "id": "tavern-notes-user", "name": "Tester", "avatar": "persona.png", "isUser": true },
+      "chat": { "id": "chat-1", "name": "Synthetic Chat", "messageId": null },
+      "source": "manual_inspiration",
+      "tags": ["灵感笔记"],
+      "repeatCount": 1,
+      "lastRepeatedAt": null,
+      "latestMessageId": null
+    }
+  ]
+}

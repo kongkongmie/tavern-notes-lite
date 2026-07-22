@@ -1,12 +1,24 @@
 {
   "name": "tavern-notes-lite",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test:storage": "node tests/storage-node-smoke.mjs",
     "test:floor": "node tests/floor-capture-node-smoke.mjs",
-    "test:theme": "node tests/theme-compat-node-smoke.mjs"
+    "test:theme": "node tests/theme-compat-node-smoke.mjs",
+    "test:version": "node tests/version-consistency.mjs",
+    "test:coexistence": "node tests/coexistence-static-smoke.mjs",
+    "test:overlay": "node tests/overlay-contract-smoke.mjs",
+    "test:contract": "node tests/data-contract-smoke.mjs",
+    "test:note-card": "node tests/note-card-component.mjs",
+    "test:theme-runtime": "node tests/theme-runtime.mjs",
+    "test:update-center": "node tests/update-center.mjs",
+    "test:i18n": "node tests/i18n-completeness.mjs",
+    "test:secret-files": "node tests/secret-files-removal-static.mjs",
+    "test:detail-actions": "node tests/detail-actions-static.mjs",
+    "test:followup": "node tests/followup-regression-static.mjs",
+    "test:release": "node tests/release-package-static.mjs"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.4",

@@ -3,6 +3,7 @@ const DB_VERSION = 1;
 const NOTE_STORE = 'notes';
 const META_STORE = 'meta';
 const MAX_CONTENT_LENGTH = 200000;
+const LITE_VERSION = '0.2.0';
 
 let databasePromise = null;
 
@@ -115,15 +116,28 @@ function cleanNote(input, seq, preserveIdentity = false) {
         chat: {
             id: input?.chat?.id ?? null,
             name: String(input?.chat?.name || ''),
-            messageId: Number.isFinite(Number(input?.chat?.messageId)) ? Number(input.chat.messageId) : null,
+            messageId: input?.chat?.messageId !== null
+                && input?.chat?.messageId !== undefined
+                && input?.chat?.messageId !== ''
+                && Number.isFinite(Number(input.chat.messageId))
+                ? Number(input.chat.messageId)
+                : null,
         },
         source: String(input?.source || ''),
         tags: normalizeTags(input?.tags),
         repeatCount: Math.max(1, safeNumber(input?.repeatCount, 1)),
         lastRepeatedAt: input?.lastRepeatedAt ? String(input.lastRepeatedAt) : null,
-        latestMessageId: Number.isFinite(Number(input?.latestMessageId))
+        latestMessageId: input?.latestMessageId !== null
+            && input?.latestMessageId !== undefined
+            && input?.latestMessageId !== ''
+            && Number.isFinite(Number(input.latestMessageId))
             ? Number(input.latestMessageId)
-            : (Number.isFinite(Number(input?.chat?.messageId)) ? Number(input.chat.messageId) : null),
+            : (input?.chat?.messageId !== null
+                && input?.chat?.messageId !== undefined
+                && input?.chat?.messageId !== ''
+                && Number.isFinite(Number(input.chat.messageId))
+                ? Number(input.chat.messageId)
+                : null),
     };
 }
 
@@ -237,7 +251,7 @@ function baseFilteredNotes(notes, params) {
     const query = String(params.get('q') || '').trim();
     const selectedTag = String(params.get('tag') || '').trim().toLocaleLowerCase();
     return notes.filter(note => (
-        (includeUserInput || note.type !== 'user_input')
+        (includeUserInput || note.type !== 'user_input' || note.source === 'manual_inspiration')
         && (!selectedTag || (note.tags || []).some(tag => tag.toLocaleLowerCase() === selectedTag))
         && searchMatches(note, query)
     ));
@@ -518,7 +532,7 @@ export async function liteApi(path, options = {}, user = 'default-user') {
     const method = String(options.method || 'GET').toUpperCase();
     if (url.pathname === '/status') {
         const notes = await readAllNotes();
-        return { ok: true, user, version: '0.1.3', totalNotes: notes.length, storage: 'IndexedDB' };
+        return { ok: true, user, version: LITE_VERSION, totalNotes: notes.length, storage: 'IndexedDB' };
     }
     if (url.pathname === '/notes' && method === 'POST') {
         const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});

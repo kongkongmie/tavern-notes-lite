@@ -8,6 +8,37 @@ export function normalizeFloorText(value) {
         .trim();
 }
 
+export function normalizeExcludedTagNames(value) {
+    const items = Array.isArray(value) ? value : String(value || '').split(/[\s,，、;；]+/);
+    const normalized = [];
+    for (const item of items) {
+        const tag = String(item || '')
+            .trim()
+            .replace(/^<\s*\/?\s*/, '')
+            .replace(/\s*\/?>$/, '')
+            .toLowerCase();
+        if (!/^[a-z][a-z0-9-]*$/.test(tag) || normalized.includes(tag)) continue;
+        normalized.push(tag);
+        if (normalized.length >= 32) break;
+    }
+    return normalized;
+}
+
+export function buildFloorExcludeSelector(baseSelector, excludedTagNames) {
+    return [String(baseSelector || '').trim(), ...normalizeExcludedTagNames(excludedTagNames)]
+        .filter(Boolean)
+        .join(',');
+}
+
+export function stripExcludedTagsFromHtml({ documentRef, html, excludedTagNames }) {
+    if (!documentRef) return String(html || '');
+    const root = documentRef.createElement('div');
+    root.innerHTML = String(html || '');
+    const selector = normalizeExcludedTagNames(excludedTagNames).join(',');
+    if (selector) root.querySelectorAll(selector).forEach(element => element.remove());
+    return root.innerHTML;
+}
+
 export function getCleanFloorElementText(element, excludeSelector) {
     if (!element) return '';
     if (excludeSelector && element.matches?.(excludeSelector)) return '';

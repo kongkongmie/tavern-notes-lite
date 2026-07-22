@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0
+
+- Introduced shared note-card, theme-runtime, and update-center modules aligned with Tavern Notes Full while preserving the existing Lite repository, install path, and IndexedDB storage.
+- Redesigned note cards for denser previews, clear User/excerpt color distinction, expandable full-detail reading, and direct actions from the detail view.
+- Reworked the header into consistent icon controls with width-aware overflow: more actions appear when the panel is wide and move into the More menu when space is limited.
+- Moved theme access into the top window toolbar and retired the built-in Secret Files theme, including cleanup of legacy active-theme selections and blocked re-import of the retired built-in file.
+- Added whole-message exclusion tags and a directly visible body-tag editor for removing configured tagged blocks before capture.
+- Added an in-app update center with version checks, the default changelog, and optional author-maintained Chinese annotations from `CHANGELOG.zh-CN.md`.
+- Kept manual USER inspiration notes visible when automatic User input recording is disabled; the recording switch now controls capture only, not visibility.
+- Reduced broad DOM rescans during selection, message, and toolbar observation to improve responsiveness while messages stream.
+- Completed Simplified Chinese, Traditional Chinese, English, and Korean coverage for the new controls and states.
+- Existing Lite notes remain in the same IndexedDB database and keep the Full-compatible export/import format.
+
 ## 0.1.4
 
 - Added draggable floating launcher positioning with reset support.

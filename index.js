@@ -9,8 +9,11 @@ import {
     this_chid,
     user_avatar,
 } from '../../../../script.js';
-import { extractFloorText } from './floor-capture.js';
+import { buildFloorExcludeSelector, extractFloorText, normalizeExcludedTagNames, stripExcludedTagsFromHtml } from './floor-capture.js';
 import { toLiteThemeVariables } from './theme-compat.js';
+import { closeNoteActionMenus, renderNoteCards, toggleNoteActionMenu } from './core/note-card.js';
+import { normalizeThemeFlavor, replaceThemeVariables } from './core/theme-runtime.js';
+import { fetchUpdateInfo } from './core/update-center.js';
 import {
     getAllLiteNotes,
     getLiteExport,
@@ -23,8 +26,11 @@ import {
 
 const SETTINGS_KEY = 'tavern-notes-lite-settings';
 const UPDATE_NOTICE_KEY = 'tavern-notes-lite-update-notice';
-const EXTENSION_VERSION = '0.1.4';
+const EXTENSION_VERSION = '0.2.0';
 const REMOTE_MANIFEST_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/manifest.json';
+const REMOTE_CHANGELOG_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/CHANGELOG.md';
+const REMOTE_CHANGELOG_ANNOTATION_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/CHANGELOG.zh-CN.md';
+const REPOSITORY_URL = 'https://github.com/kongkongmie/tavern-notes-lite';
 const THEME_STORAGE_KEY = 'tavern-notes-lite-themes';
 const ACTIVE_THEME_KEY = 'tavern-notes-lite-active-theme';
 const FULL_EXTENSION_SELECTORS = '#tavern-notes-panel, #tavern-notes-open, #tavern-notes-floating-launcher, #tavern-notes-menu-entry';
@@ -113,6 +119,7 @@ const state = {
     tagManagerQuery: '',
     tagManagerSort: 'count',
     editingNote: null,
+    detailNote: null,
     editingTags: [],
     notes: [],
     characters: [],
@@ -151,6 +158,9 @@ const state = {
     floorCaptureSelector: !localSettings.floorCaptureSelector || localSettings.floorCaptureSelector === LEGACY_FLOOR_CAPTURE_SELECTOR
         ? DEFAULT_FLOOR_CAPTURE_SELECTOR
         : localSettings.floorCaptureSelector,
+    floorCaptureExcludedTags: normalizeExcludedTagNames(localSettings.floorCaptureExcludedTags),
+    updateInfo: null,
+    updateChecking: false,
     appleGlassMode: localSettings.appleGlassMode === 'night' ? 'night' : 'day',
     defaultThemeMode: localSettings.defaultThemeMode === 'night' ? 'night' : 'day',
     pendingUserInputDedupeIds: [],
@@ -338,6 +348,7 @@ const TEXT_ZH_CN = {
     connected: '已连接：{user}，V{version}，总记录约 {count} 条',
     updateAvailableTitle: '酒馆笔记有新版本',
     updateAvailable: '检测到 v{version}。请在 SillyTavern 扩展面板里更新酒馆笔记 Lite。',
+    updateCenter: '版本与更新', updateCenterIntro: '查看当前版本、最新版本和更新日志。是否更新完全由你决定。', checkUpdates: '检查更新', checkingUpdates: '正在检查…', installedVersion: '当前版本', latestVersion: '最新版本', updateAvailableStatus: '发现新版本 v{version}', upToDateStatus: '已经是最新版本', updateCheckFailed: '暂时无法连接更新服务器', openExtensionManager: '打开扩展管理', openRepository: '打开项目页面', updateInstructions: '更新由 SillyTavern 扩展管理器执行；酒馆笔记 Lite 不会静默安装或覆盖文件。', changelogTitle: '更新日志', latestBadge: '最新', noChangelog: '暂时没有取得更新日志。', viewUpdate: '查看更新', authorAnnotation: '作者中文注释',
     openNotes: '打开酒馆笔记',
     captureSelected: '摘录选中',
     captureSelectedTitle: '摘录选中的聊天文字',
@@ -367,6 +378,7 @@ const TEXT_ZH_CN = {
     floorCaptureExampleTitle: '推荐写法',
     floorCaptureExample: '<content>这里写真正要摘录的正文。</content>',
     floorCaptureAdvanced: '修改正文标签',
+    excludeTagsTitle: '排除标签', excludeTagsHelp: '若正文中夹有这些标签，摘录时会删除标签及其中的全部内容。例如填写 thinking，会删除 <thinking>…</thinking>。', excludeTagPlaceholder: 'thinking、status', addExcludedTag: '添加排除标签', removeExcludedTag: '删除排除标签', noExcludedTags: '尚未设置排除标签', invalidExcludedTag: '请输入有效标签名，例如 thinking。', excludedTagsSaved: '排除标签已保存。',
     launcherMode: '入口',
     toolbarButtons: '工具栏',
     floatingBall: '悬浮球',
@@ -532,6 +544,7 @@ const TEXTS = {
         openNotes: '打開酒館筆記',
         updateAvailableTitle: '酒館筆記有新版本',
         updateAvailable: '偵測到 v{version}。請在 SillyTavern 擴充面板裡更新酒館筆記 Lite。',
+        updateCenter: '版本與更新', updateCenterIntro: '查看目前版本、最新版本和更新日誌。是否更新完全由你決定。', checkUpdates: '檢查更新', checkingUpdates: '正在檢查…', installedVersion: '目前版本', latestVersion: '最新版本', updateAvailableStatus: '發現新版本 v{version}', upToDateStatus: '已經是最新版本', updateCheckFailed: '暫時無法連線更新伺服器', openExtensionManager: '開啟擴充管理', openRepository: '開啟專案頁面', updateInstructions: '更新由 SillyTavern 擴充管理器執行；酒館筆記 Lite 不會靜默安裝或覆蓋檔案。', changelogTitle: '更新日誌', latestBadge: '最新', noChangelog: '暫時沒有取得更新日誌。', viewUpdate: '查看更新', authorAnnotation: '作者中文註釋',
         captureFloor: '摘錄整層',
         captureFloorTitle: '摘錄這一整層樓的文字',
         captureFloorEmpty: '沒有找到這一層樓的正文。',
@@ -558,6 +571,7 @@ const TEXTS = {
         floorCaptureExampleTitle: '推薦寫法',
         floorCaptureExample: '<content>這裡寫真正要摘錄的正文。</content>',
         floorCaptureAdvanced: '修改正文標籤',
+        excludeTagsTitle: '排除標籤', excludeTagsHelp: '若正文中夾有這些標籤，摘錄時會刪除標籤及其中的全部內容。例如填入 thinking，會刪除 <thinking>…</thinking>。', excludeTagPlaceholder: 'thinking、status', addExcludedTag: '新增排除標籤', removeExcludedTag: '刪除排除標籤', noExcludedTags: '尚未設定排除標籤', invalidExcludedTag: '請輸入有效標籤名，例如 thinking。', excludedTagsSaved: '排除標籤已儲存。',
         launcherMode: '入口',
         toolbarButtons: '工具列',
         floatingBall: '懸浮球',
@@ -634,6 +648,9 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         localFontSessionOnly: '字體檔案較大，已臨時匯入。本次頁面可用，下次需要重新選擇檔案。',
         localFontUnsupported: '目前瀏覽器不支援本機字體匯入。',
         savedFontMissing: '這個字體缺少可讀取資料，請重新匯入。',
+        subtitle: '柔和筆記・角色記憶', prevPage: '上一頁', nextPage: '下一頁', jumpPage: '跳頁', exportScope: '匯出範圍', allNotes: '全部筆記', exportHint: '匯出的檔案可重新匯入 Tavern Notes。', themeGuide: '主題製作說明', preview: '預覽', save: '儲存', shareCard: '分享卡片', font: '字體', fontSize: '字體大小', fontImport: '字體網址或 @import', background: '背景', display: '顯示', characterName: '角色名稱', date: '日期',
+        filtersAll: '全部筆記', filtersCharacters: '角色瀏覽', filtersUserInput: 'User 輸入', filtersExcerpt: '摘錄', excerpt: '摘錄', manual: '手動筆記', noNotes: '暫無筆記', noNotesHint: '選取聊天文字後，按下摘錄選中即可儲存。', noCharacterNotes: '這個角色暫無筆記', noCharacterNotesHint: '切換角色或返回角色瀏覽。', priority: '優先', browseByCharacter: '依角色瀏覽', characterCount: '{count} 則筆記', otherCharactersEmpty: '沒有其他角色筆記。', viewingCharacter: '正在查看 {name}', backCharacters: '返回角色瀏覽',
+        fillInput: '重新輸入', copy: '複製', share: '分享', delete: '刪除', viewFull: '查看全文', captured: '已摘錄選中文字。', deleted: '已刪除筆記。', selectTextFirst: '請先選取聊天文字，再按摘錄選中。', noInput: '輸入框沒有內容。', shownCharacters: '已顯示 {count} 個角色', shownNotes: '已顯示 {shown} 則，目前篩選共 {total} 則', connected: '已連線', captureSelected: '摘錄選中', captureSelectedTitle: '摘錄選中的聊天文字',
     },
     en: {
         ...TEXT_ZH_CN,
@@ -760,6 +777,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         connected: 'Connected: {user}, V{version}, about {count} total notes',
         updateAvailableTitle: 'Tavern Notes Lite update available',
         updateAvailable: 'Version {version} is available. Update Tavern Notes Lite in the SillyTavern extensions panel.',
+        updateCenter: 'Version & updates', updateCenterIntro: 'View the installed version, latest version, and release notes. You decide whether to update.', checkUpdates: 'Check for updates', checkingUpdates: 'Checking…', installedVersion: 'Installed', latestVersion: 'Latest', updateAvailableStatus: 'Version {version} is available', upToDateStatus: 'You are up to date', updateCheckFailed: 'Could not reach the update server', openExtensionManager: 'Open extension manager', openRepository: 'Open project page', updateInstructions: 'Updates are performed by the SillyTavern extension manager. Tavern Notes Lite never installs silently or overwrites files on its own.', changelogTitle: 'Release notes', latestBadge: 'Latest', noChangelog: 'Release notes are not available right now.', viewUpdate: 'View update', authorAnnotation: 'Author’s Chinese notes',
         openNotes: 'Open Tavern Notes Lite',
         captureSelected: 'Capture selected',
         captureSelectedTitle: 'Capture selected chat text',
@@ -789,6 +807,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         floorCaptureExampleTitle: 'Recommended markup',
         floorCaptureExample: '<content>Write the body text to capture here.</content>',
         floorCaptureAdvanced: 'Change body tag',
+        excludeTagsTitle: 'Excluded tags', excludeTagsHelp: 'When these tags occur inside the body, the tags and everything inside them are removed. For example, thinking removes <thinking>…</thinking>.', excludeTagPlaceholder: 'thinking, status', addExcludedTag: 'Add excluded tag', removeExcludedTag: 'Remove excluded tag', noExcludedTags: 'No excluded tags yet', invalidExcludedTag: 'Enter a valid tag name, such as thinking.', excludedTagsSaved: 'Excluded tags saved.',
         launcherMode: 'Launcher',
         toolbarButtons: 'Toolbar',
         floatingBall: 'Floating ball',
@@ -865,6 +884,7 @@ assets control the header icon and background image; the input-bar and capture b
         localFontSessionOnly: 'This font file is large, so it was imported for this page only. Choose it again next time.',
         localFontUnsupported: 'This browser does not support local font import.',
         savedFontMissing: 'This font has no readable data. Please import it again.',
+        subtitle: 'soft notes · character memory', noNotesHint: 'Select chat text, then click Capture selected to save an excerpt.', noCharacterNotesHint: 'Choose another character or return to character browsing.', otherCharactersEmpty: 'No other character notes.',
     },
     ko: {
         ...TEXT_ZH_CN,
@@ -991,6 +1011,7 @@ assets control the header icon and background image; the input-bar and capture b
         connected: '연결됨: {user}, V{version}, 전체 약 {count}개',
         updateAvailableTitle: 'Tavern Notes Lite 업데이트 가능',
         updateAvailable: 'v{version} 버전이 있습니다. SillyTavern 확장 패널에서 Tavern Notes Lite를 업데이트하세요.',
+        updateCenter: '버전 및 업데이트', updateCenterIntro: '현재 버전, 최신 버전과 변경 사항을 확인합니다. 업데이트 여부는 사용자가 결정합니다.', checkUpdates: '업데이트 확인', checkingUpdates: '확인 중…', installedVersion: '현재 버전', latestVersion: '최신 버전', updateAvailableStatus: '새 버전 v{version} 사용 가능', upToDateStatus: '최신 버전입니다', updateCheckFailed: '업데이트 서버에 연결할 수 없습니다', openExtensionManager: '확장 관리 열기', openRepository: '프로젝트 페이지 열기', updateInstructions: '업데이트는 SillyTavern 확장 관리자가 수행합니다. Tavern Notes Lite는 자동으로 설치하거나 파일을 덮어쓰지 않습니다.', changelogTitle: '업데이트 기록', latestBadge: '최신', noChangelog: '현재 업데이트 기록을 가져올 수 없습니다.', viewUpdate: '업데이트 보기', authorAnnotation: '작성자 중국어 주석',
         openNotes: '술집 노트 열기',
         captureSelected: '선택 발췌',
         captureSelectedTitle: '선택한 채팅 글 발췌',
@@ -1020,6 +1041,7 @@ assets control the header icon and background image; the input-bar and capture b
         floorCaptureExampleTitle: '권장 형식',
         floorCaptureExample: '<content>발췌할 실제 본문을 여기에 씁니다.</content>',
         floorCaptureAdvanced: '본문 태그 변경',
+        excludeTagsTitle: '제외 태그', excludeTagsHelp: '본문 안에 이 태그가 있으면 태그와 내부 내용을 모두 삭제한 뒤 발췌합니다. 예: thinking은 <thinking>…</thinking>을 삭제합니다.', excludeTagPlaceholder: 'thinking, status', addExcludedTag: '제외 태그 추가', removeExcludedTag: '제외 태그 삭제', noExcludedTags: '설정된 제외 태그 없음', invalidExcludedTag: 'thinking과 같은 올바른 태그 이름을 입력하세요.', excludedTagsSaved: '제외 태그가 저장되었습니다.',
         launcherMode: '실행 버튼',
         toolbarButtons: '도구막대',
         floatingBall: '플로팅 버튼',
@@ -1079,6 +1101,9 @@ assets는 제목 아이콘과 배경 이미지를 제어합니다. 입력창과 
         localFontSessionOnly: '글꼴 파일이 커서 이 페이지에서만 임시로 가져왔습니다. 다음에는 파일을 다시 선택해야 합니다.',
         localFontUnsupported: '현재 브라우저는 로컬 글꼴 가져오기를 지원하지 않습니다.',
         savedFontMissing: '이 글꼴에는 읽을 수 있는 데이터가 없습니다. 다시 가져오세요.',
+        subtitle: '부드러운 노트 · 캐릭터 메모리', noNotesHint: '채팅 글을 선택한 뒤 선택 발췌를 눌러 저장하세요.', noCharacterNotesHint: '다른 캐릭터를 선택하거나 캐릭터 탐색으로 돌아가세요.', otherCharactersEmpty: '다른 캐릭터 노트가 없습니다.', userInputCleanup: '입력 정리', addInputRules: '입력 규칙 추가',
+        userInputCleanupTitle: 'User 입력 정리', userInputCleanupIntro: '반복 입력을 묶어 표시하고, 자동 저장에서 제외할 정확한 문구와 접두사를 설정합니다.', collapseRepeatedInput: '반복 입력 묶기', collapseRepeatedHelp: '같은 채팅에서 내용이 같은 User 입력을 하나의 카드로 묶습니다.', ignoreExactLabel: '정확히 일치하면 제외', ignoreExactPlaceholder: '한 줄에 하나씩 입력', ignorePrefixLabel: '이 접두사로 시작하면 제외', ignorePrefixPlaceholder: '한 줄에 하나씩 입력', saveInputRules: '입력 규칙 저장', inputRulesSaved: '입력 규칙을 저장했습니다.', scanDuplicates: '기존 중복 항목 검사', scanNoDuplicates: '정리할 기존 중복 입력이 없습니다.', scanPreview: '중복 정리 미리보기', cleanupConfirm: '선택한 중복 항목 정리', cleanupDone: '{count}개의 중복 입력을 정리했습니다.', repeatedTimes: '{count}회 반복', filterInputRules: '입력 규칙 검색', noInputRules: '설정된 규칙 없음', clearHistoryDuplicates: '기존 중복 정리', dedupeOccurrences: '{count}개 항목', confirmCleanup: '정리 확인', cancelCleanup: '취소',
+        selectionCaptureButton: '선택 영역 버튼', selectionCaptureButtonTitle: '글을 선택하면 플로팅 발췌 버튼 표시', selectionCaptureButtonOn: '선택 영역 플로팅 발췌 버튼을 켰습니다.', selectionCaptureButtonOff: '선택 영역 플로팅 발췌 버튼을 껐습니다.', builtInThemeCannotDelete: '내장 테마는 삭제할 수 없습니다.', appleThemeMode: 'Apple Glass 모드', appleThemeModeTitle: 'Apple Glass의 낮/밤 모드 전환', appleThemeDay: '낮 모드', appleThemeNight: '밤 모드', defaultThemeDay: '기본 낮 모드', defaultThemeNight: '기본 밤 모드', defaultThemeModeTitle: '기본 테마의 낮/밤 모드 전환', defaultThemeDayOn: '기본 테마 낮 모드를 적용했습니다.', defaultThemeNightOn: '기본 테마 밤 모드를 적용했습니다.', appleThemeEnabled: 'Apple Glass 테마를 적용했습니다.',
     },
 };
 
@@ -1238,6 +1263,20 @@ const FILTERS = [
     { id: 'user_input', icon: 'fa-keyboard', label: 'filtersUserInput', hint: 'hintYourWords' },
     { id: 'excerpt', icon: 'fa-highlighter', label: 'filtersExcerpt', hint: 'hintSelectedText' },
 ];
+
+const HEADER_ACTION_IDS = [
+    'tavern-notes-lite-new-note-open',
+    'tavern-notes-lite-selection-capture-setting',
+    'tavern-notes-lite-floor-capture-open',
+    'tavern-notes-lite-auto-user-input',
+    'tavern-notes-lite-user-input-cleanup-open',
+    'tavern-notes-lite-export',
+    'tavern-notes-lite-update-open',
+    'tavern-notes-lite-reset-floating',
+    'tavern-notes-lite-apple-mode-main',
+];
+let headerActionResizeObserver = null;
+let headerActionLayoutFrame = 0;
 
 const SHARE_CARD_THEMES = [
     { id: 'calendar', labelKey: 'themeCalendar' },
@@ -1406,10 +1445,26 @@ function getLiteBuiltInThemes() {
     ];
 }
 
+const RETIRED_SECRET_FILES_THEME_IDS = new Set(['secret-files', 'archive']);
+
+function isRetiredSecretFilesTheme(record) {
+    const id = String(record?.id || record?.theme?.id || '').trim().toLowerCase();
+    const name = String(record?.name || record?.theme?.name || '').trim();
+    const variables = record?.theme?.variables || {};
+    const flavor = String(variables['--tnl-theme-flavor'] || variables['--tn-theme-flavor'] || '').trim().toLowerCase();
+    return RETIRED_SECRET_FILES_THEME_IDS.has(id)
+        || flavor === 'archive'
+        || /secret\s*files?/i.test(name)
+        || /秘密档案|秘密檔案/.test(name);
+}
+
 function readLiteCustomThemes() {
     try {
         const themes = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '[]');
-        return Array.isArray(themes) ? themes.filter(item => item?.id && item?.theme) : [];
+        const validThemes = Array.isArray(themes) ? themes.filter(item => item?.id && item?.theme) : [];
+        const safeThemes = validThemes.filter(item => !isRetiredSecretFilesTheme(item));
+        if (safeThemes.length !== validThemes.length) writeLiteCustomThemes(safeThemes);
+        return safeThemes;
     } catch {
         return [];
     }
@@ -1458,6 +1513,7 @@ async function liteThemeApi(path, options = {}) {
         const theme = normalizeTheme(payload.theme || {});
         const existingId = payload.id && !['default', APPLE_THEME_ID].includes(payload.id) ? String(payload.id) : '';
         const id = existingId || `custom-${Date.now().toString(36)}`;
+        if (isRetiredSecretFilesTheme({ id, name: theme.name, theme })) throw new Error(t('invalidThemeFile'));
         const customThemes = readLiteCustomThemes().filter(item => item.id !== id);
         customThemes.push({ id, name: theme.name || t('unnamedTheme'), author: theme.author || '', builtIn: false, theme });
         writeLiteCustomThemes(customThemes);
@@ -1499,17 +1555,6 @@ function setStatus(message) {
     });
 }
 
-function compareVersions(left, right) {
-    const a = String(left || '').split(/[.-]/).map(part => Number.parseInt(part, 10) || 0);
-    const b = String(right || '').split(/[.-]/).map(part => Number.parseInt(part, 10) || 0);
-    const length = Math.max(a.length, b.length, 3);
-    for (let i = 0; i < length; i++) {
-        const diff = (a[i] || 0) - (b[i] || 0);
-        if (diff !== 0) return diff;
-    }
-    return 0;
-}
-
 async function getInstalledVersion() {
     try {
         const response = await fetch(`/scripts/extensions/third-party/tavern-notes-lite/manifest.json?t=${Date.now()}`, { cache: 'no-store' });
@@ -1533,19 +1578,20 @@ function shouldNotifyUpdate(version) {
     return true;
 }
 
-async function checkForTavernNotesUpdate() {
+async function checkForTavernNotesUpdate({ notifyAvailable = true, throwOnError = false } = {}) {
+    state.updateChecking = true;
+    renderUpdateCenter();
     try {
-        const [installedVersion, remoteResponse] = await Promise.all([
-            getInstalledVersion(),
-            fetch(`${REMOTE_MANIFEST_URL}?t=${Date.now()}`, { cache: 'no-store' }),
-        ]);
-        if (!remoteResponse.ok) return;
-        const remoteManifest = await remoteResponse.json();
-        const remoteVersion = remoteManifest.version;
-        if (!remoteVersion || compareVersions(remoteVersion, installedVersion) <= 0) return;
-        if (!shouldNotifyUpdate(remoteVersion)) return;
-
-        const message = t('updateAvailable', { version: remoteVersion });
+        const installedVersion = await getInstalledVersion();
+        const info = await fetchUpdateInfo({
+            installedVersion,
+            manifestUrl: REMOTE_MANIFEST_URL,
+            changelogUrl: REMOTE_CHANGELOG_URL,
+            annotationUrl: REMOTE_CHANGELOG_ANNOTATION_URL,
+        });
+        state.updateInfo = info;
+        if (!info.hasUpdate || !notifyAvailable || !shouldNotifyUpdate(info.latestVersion)) return info;
+        const message = t('updateAvailable', { version: info.latestVersion });
         const title = t('updateAvailableTitle');
         const toastrApi = globalThis.toastr;
         if (toastrApi) {
@@ -1553,8 +1599,15 @@ async function checkForTavernNotesUpdate() {
         } else {
             setStatus(`${title}: ${message}`);
         }
+        return info;
     } catch (error) {
+        state.updateInfo = { error: true, installedVersion: await getInstalledVersion(), changelog: [] };
         console.debug('[Tavern Notes Lite] Update check skipped:', error);
+        if (throwOnError) throw error;
+        return state.updateInfo;
+    } finally {
+        state.updateChecking = false;
+        renderUpdateCenter();
     }
 }
 
@@ -1570,6 +1623,7 @@ function saveLocalSettings() {
         showSelectionCaptureButton: state.showSelectionCaptureButton,
         showFloorCaptureButton: state.showFloorCaptureButton,
         floorCaptureSelector: state.floorCaptureSelector,
+        floorCaptureExcludedTags: state.floorCaptureExcludedTags,
         appleGlassMode: state.appleGlassMode,
         defaultThemeMode: state.defaultThemeMode,
         currentUserName: state.currentUserName,
@@ -1593,7 +1647,7 @@ function saveLanguageSetting(language) {
 }
 
 function getVisibleFilters() {
-    return FILTERS.filter(filter => state.autoCaptureUserInput || filter.id !== 'user_input');
+    return FILTERS;
 }
 
 function updateAutoCaptureUserInputButton() {
@@ -1608,10 +1662,6 @@ function updateAutoCaptureUserInputButton() {
 
 function toggleAutoCaptureUserInput() {
     state.autoCaptureUserInput = !state.autoCaptureUserInput;
-    if (!state.autoCaptureUserInput && state.filter === 'user_input') {
-        state.filter = 'all';
-        state.page = 1;
-    }
     saveLocalSettings();
     updateAutoCaptureUserInputButton();
     renderFilterTabs();
@@ -1666,6 +1716,32 @@ function updateFloorCaptureSelectorInput() {
         input.placeholder = t('floorCaptureSelectorPlaceholder');
     }
     updateFloorCaptureSelectorSummary();
+    renderFloorCaptureExcludedTags();
+}
+
+function renderFloorCaptureExcludedTags() {
+    const list = document.querySelector('#tavern-notes-lite-floor-exclude-tags');
+    if (!list) return;
+    list.innerHTML = state.floorCaptureExcludedTags.length
+        ? state.floorCaptureExcludedTags.map(tag => `<span class="tnl-floor-exclude-tag"><code>&lt;${htmlEscape(tag)}&gt;</code><button type="button" data-floor-exclude-remove="${htmlEscape(tag)}" title="${htmlEscape(t('removeExcludedTag'))}" aria-label="${htmlEscape(t('removeExcludedTag'))}"><i class="fa-solid fa-xmark"></i></button></span>`).join('')
+        : `<span class="tnl-floor-exclude-empty">${htmlEscape(t('noExcludedTags'))}</span>`;
+}
+
+function addFloorCaptureExcludedTags() {
+    const input = document.querySelector('#tavern-notes-lite-floor-exclude-input');
+    const additions = normalizeExcludedTagNames(input?.value);
+    if (!additions.length) return notify(t('invalidExcludedTag'), 'warning');
+    state.floorCaptureExcludedTags = normalizeExcludedTagNames([...state.floorCaptureExcludedTags, ...additions]);
+    if (input) input.value = '';
+    saveLocalSettings();
+    renderFloorCaptureExcludedTags();
+    notify(t('excludedTagsSaved'), 'success');
+}
+
+function removeFloorCaptureExcludedTag(tag) {
+    state.floorCaptureExcludedTags = state.floorCaptureExcludedTags.filter(item => item !== tag);
+    saveLocalSettings();
+    renderFloorCaptureExcludedTags();
 }
 
 function selectorFromFloorCaptureTag(value) {
@@ -1741,6 +1817,76 @@ function closeFloorCaptureMenu() {
     if (!menu) return;
     menu.classList.remove('open');
     menu.setAttribute('aria-hidden', 'true');
+}
+
+function renderUpdateCenter() {
+    const menu = document.querySelector('#tavern-notes-lite-update-menu');
+    if (!menu) return;
+    const info = state.updateInfo;
+    const installed = menu.querySelector('[data-update-installed]');
+    const latest = menu.querySelector('[data-update-latest]');
+    const status = menu.querySelector('[data-update-status]');
+    const checkButton = menu.querySelector('#tavern-notes-lite-update-check');
+    const indicator = document.querySelector('#tavern-notes-lite-update-indicator');
+    const moreButton = document.querySelector('#tavern-notes-lite-more-open');
+    const hasUpdate = Boolean(info?.hasUpdate);
+    indicator?.classList.toggle('tnl-hidden', !hasUpdate);
+    moreButton?.classList.toggle('tnl-has-update', hasUpdate);
+    const indicatorVersion = indicator?.querySelector('[data-update-indicator-version]');
+    if (indicatorVersion && hasUpdate) indicatorVersion.textContent = `v${info.latestVersion}`;
+    if (installed) installed.textContent = `v${info?.installedVersion || EXTENSION_VERSION}`;
+    if (latest) latest.textContent = info?.latestVersion ? `v${info.latestVersion}` : '—';
+    if (status) {
+        status.className = info?.hasUpdate ? 'has-update' : info && !info.error ? 'is-current' : '';
+        status.textContent = state.updateChecking
+            ? t('checkingUpdates')
+            : info?.error
+                ? t('updateCheckFailed')
+                : info?.hasUpdate
+                    ? t('updateAvailableStatus', { version: info.latestVersion })
+                    : info
+                        ? t('upToDateStatus')
+                        : t('checkUpdates');
+    }
+    if (checkButton) {
+        checkButton.disabled = state.updateChecking;
+        checkButton.classList.toggle('checking', state.updateChecking);
+        checkButton.querySelector('span')?.replaceChildren(document.createTextNode(t(state.updateChecking ? 'checkingUpdates' : 'checkUpdates')));
+    }
+    const log = menu.querySelector('#tavern-notes-lite-update-log');
+    if (!log) return;
+    log.innerHTML = info?.changelog?.length
+        ? info.changelog.map((entry, index) => {
+            const annotation = info.annotations?.find(item => item.version === entry.version);
+            return `<article class="tnl-update-entry"><header><b>v${htmlEscape(entry.version)}</b>${index === 0 ? `<span>${htmlEscape(t('latestBadge'))}</span>` : ''}</header>${annotation?.items?.length ? `<aside class="tnl-update-annotation"><b>${htmlEscape(t('authorAnnotation'))}</b><ul>${annotation.items.map(item => `<li>${htmlEscape(item)}</li>`).join('')}</ul></aside>` : ''}${entry.items.length ? `<ul>${entry.items.map(item => `<li>${htmlEscape(item)}</li>`).join('')}</ul>` : ''}</article>`;
+        }).join('')
+        : `<div class="tnl-update-empty">${htmlEscape(t('noChangelog'))}</div>`;
+}
+
+function openUpdateCenter() {
+    const menu = document.querySelector('#tavern-notes-lite-update-menu');
+    if (!menu) return;
+    closeHeaderPopovers();
+    renderUpdateCenter();
+    menu.classList.add('open');
+    menu.setAttribute('aria-hidden', 'false');
+    if (!state.updateInfo && !state.updateChecking) checkForTavernNotesUpdate({ notifyAvailable: false });
+}
+
+function closeUpdateCenter() {
+    const menu = document.querySelector('#tavern-notes-lite-update-menu');
+    menu?.classList.remove('open');
+    menu?.setAttribute('aria-hidden', 'true');
+}
+
+function openSillyTavernExtensionManager() {
+    closeUpdateCenter();
+    closePanel();
+    document.querySelector('#extensions_details')?.click();
+}
+
+function openUpdateRepository() {
+    window.open(REPOSITORY_URL, '_blank', 'noopener,noreferrer');
 }
 
 function syncUserInputCleanupControls() {
@@ -1888,7 +2034,6 @@ function getListPath() {
     if (state.tagFilter) params.set('tag', state.tagFilter);
     const currentCharacter = getCurrentCharacter();
     if (currentCharacter.id !== null) params.set('currentCharacterId', String(currentCharacter.id));
-    if (!state.autoCaptureUserInput) params.set('includeUserInput', 'false');
     if (state.filter === 'user_input') params.set('type', 'user_input');
     if (state.filter === 'excerpt') params.set('type', 'excerpt');
     if (state.characterFilter) {
@@ -1905,13 +2050,11 @@ function getCharactersPath() {
     const params = new URLSearchParams();
     if (state.query.trim()) params.set('q', state.query.trim());
     if (state.tagFilter) params.set('tag', state.tagFilter);
-    if (!state.autoCaptureUserInput) params.set('includeUserInput', 'false');
     return `/characters?${params.toString()}`;
 }
 
 function getTagsPath() {
     const params = new URLSearchParams();
-    if (!state.autoCaptureUserInput) params.set('includeUserInput', 'false');
     if (state.characterFilter) {
         if (state.characterFilter.id !== null && state.characterFilter.id !== undefined && state.characterFilter.id !== '') {
             params.set('characterId', String(state.characterFilter.id));
@@ -1923,10 +2066,6 @@ function getTagsPath() {
 }
 
 async function refreshNotes() {
-    if (!state.autoCaptureUserInput && state.filter === 'user_input') {
-        state.filter = 'all';
-        state.page = 1;
-    }
     try {
         const [data, characterData, tagData] = await Promise.all([
             api(getListPath()),
@@ -1958,11 +2097,6 @@ async function refreshNotes() {
 
 function getMaxPage() {
     return Math.max(1, Math.ceil(state.totalNotes / state.pageSize));
-}
-
-function isLongNote(note) {
-    const content = String(note.content || '');
-    return content.length > 120 || content.split(/\r?\n/).length > 3;
 }
 
 function renderNoteTags(note) {
@@ -2181,21 +2315,6 @@ function getActiveVariant(note) {
     return variants[getVariantIndex(note)] || note;
 }
 
-function renderVariantControls(note) {
-    const variants = getNoteVariants(note);
-    if (variants.length <= 1) return '';
-    const index = getVariantIndex(note);
-    return `
-        <button class="tnl-variant-side tnl-variant-prev" type="button" ${index <= 0 ? 'disabled' : ''} title="上一个版本">
-            <i class="fa-solid fa-chevron-left"></i>
-        </button>
-        <button class="tnl-variant-side tnl-variant-next" type="button" ${index >= variants.length - 1 ? 'disabled' : ''} title="下一个版本">
-            <i class="fa-solid fa-chevron-right"></i>
-        </button>
-        <span class="tnl-variant-count">${index + 1}/${variants.length}</span>
-    `;
-}
-
 function renderCharacterOverview() {
     if (state.filter !== 'characters' || state.characterFilter) return '';
     const current = getCurrentCharacterSummary();
@@ -2204,7 +2323,7 @@ function renderCharacterOverview() {
     const restCharacters = state.characters.filter(character => getCharacterKey(character) !== currentKey && character !== userCharacter);
 
     if (!state.characters.length && !current.name) {
-        const emptyHint = state.autoCaptureUserInput ? t('noCharacterNotesHint') : t('noCharacterNotesHintNoUserInput');
+        const emptyHint = t('noCharacterNotesHint');
         return `
             <div class="tnl-empty">
                 <div class="tnl-empty-orb"><i class="fa-solid fa-user"></i></div>
@@ -2216,7 +2335,7 @@ function renderCharacterOverview() {
 
     const renderCard = (character, isCurrent = false) => {
         const avatar = getCharacterAvatar(character);
-        const userInputPart = state.autoCaptureUserInput ? ` · ${htmlEscape(t('userInput'))} ${htmlEscape(character.userInput)}` : '';
+        const userInputPart = ` · ${htmlEscape(t('userInput'))} ${htmlEscape(character.userInput)}`;
         return `
             <button class="tnl-character-card ${isCurrent ? 'tnl-character-current' : ''}" type="button"
                 data-character-id="${htmlEscape(character.id ?? '')}"
@@ -2274,7 +2393,7 @@ function renderCharacterScope() {
 
 function renderNoteArticles() {
     if (!state.notes.length) {
-        const emptyHint = state.autoCaptureUserInput ? t('noNotesHint') : t('noNotesHintNoUserInput');
+        const emptyHint = t('noNotesHint');
         return `
             <div class="tnl-empty">
                 <div class="tnl-empty-orb"><i class="fa-regular fa-note-sticky"></i></div>
@@ -2284,47 +2403,18 @@ function renderNoteArticles() {
         `;
     }
 
-    return state.notes.map(note => {
-        const activeNote = getActiveVariant(note);
-        const created = activeNote.createdAt ? new Date(activeNote.createdAt).toLocaleString() : '';
-        const messageId = activeNote.chat?.messageId ?? note.chat?.messageId ?? '-';
-        const chatName = activeNote.chat?.name || note.chat?.name || '';
-        return `
-            <article class="tnl-note tnl-note-${htmlEscape(noteTypeClass(note.type))}" data-note-id="${htmlEscape(note.id)}" data-chat-name="${htmlEscape(chatName)}">
-                ${renderVariantControls(note)}
-                <div class="tnl-note-topline">
-                    <span class="tnl-note-type">${htmlEscape(noteTypeLabel(note.type))}</span>
-                    ${Number(activeNote.repeatCount || 1) > 1 ? `<span class="tnl-repeat-badge"><i class="fa-solid fa-repeat"></i>${htmlEscape(t('repeatedTimes', { count: activeNote.repeatCount }))}</span>` : ''}
-                    <span class="tnl-note-character">${htmlEscape(note.character?.name || t('unnamedCharacter'))}</span>
-                    <span class="tnl-note-muted">${htmlEscape(chatName)}</span>
-                    <span class="tnl-note-muted">#${htmlEscape(messageId)}</span>
-                    <span class="tnl-note-time">${htmlEscape(created)}</span>
-                </div>
-                <div class="tnl-note-body">
-                    <div class="tnl-note-content">${renderQuotedText(activeNote.content)}</div>
-                    ${isLongNote(activeNote) ? `<button class="tnl-expand" title="${htmlEscape(t('viewFull'))}">...</button>` : ''}
-                </div>
-                ${renderNoteTags(activeNote)}
-                <div class="tnl-note-actions">
-                    <button class="menu_button tnl-fill" title="${htmlEscape(t('fillInput'))}">
-                        <i class="fa-solid fa-arrow-turn-down"></i><span>${htmlEscape(t('fillInput'))}</span>
-                    </button>
-                    <button class="menu_button tnl-copy" title="${htmlEscape(t('copy'))}">
-                        <i class="fa-regular fa-copy"></i><span>${htmlEscape(t('copy'))}</span>
-                    </button>
-                    <button class="menu_button tnl-share" title="${htmlEscape(t('share'))}">
-                        <i class="fa-solid fa-share-nodes"></i><span>${htmlEscape(t('share'))}</span>
-                    </button>
-                    <button class="menu_button tnl-edit" title="${htmlEscape(t('editNote'))}">
-                        <i class="fa-solid fa-pen"></i><span>${htmlEscape(t('edit'))}</span>
-                    </button>
-                    <button class="menu_button tnl-delete" title="${htmlEscape(t('delete'))}">
-                        <i class="fa-regular fa-trash-can"></i><span>${htmlEscape(t('delete'))}</span>
-                    </button>
-                </div>
-            </article>
-        `;
-    }).join('');
+    return renderNoteCards(state.notes, {
+        classPrefix: 'tnl',
+        escapeHtml: htmlEscape,
+        translate: t,
+        noteTypeClass,
+        noteTypeLabel,
+        renderQuotedText,
+        renderTags: renderNoteTags,
+        getVariants: getNoteVariants,
+        getVariantIndex,
+        getActiveVariant,
+    });
 }
 
 function renderNotes() {
@@ -2464,7 +2554,56 @@ async function saveNewUserNote() {
     await saveNote({ type: 'user_input', content, tags, character: getUserNoteCharacter(), chat: { id: getChatName(), name: getChatName(), messageId: null }, source: 'manual_inspiration', collapseRepeated: false });
     closeNewNoteMenu(); notify(t('newNoteSaved'), 'success'); await refreshNotes();
 }
+function layoutHeaderActions() {
+    const panel = document.querySelector('#tavern-notes-lite-panel');
+    const actions = panel?.querySelector('.tnl-header-actions');
+    const moreButton = document.querySelector('#tavern-notes-lite-more-open');
+    const moreMenu = document.querySelector('#tavern-notes-lite-more-menu');
+    if (!panel || !actions || !moreButton || !moreMenu) return;
+
+    const buttons = HEADER_ACTION_IDS.map(id => document.getElementById(id)).filter(Boolean);
+    const activeButtons = buttons.filter(button => !button.classList.contains('tnl-hidden'));
+    const panelWidth = panel.getBoundingClientRect().width || panel.clientWidth || 480;
+    const directLimit = Math.max(3, Math.floor((Math.max(0, panelWidth - 48) + 8) / 78) - 1);
+    const directButtons = activeButtons.slice(0, directLimit);
+    const overflowButtons = activeButtons.slice(directLimit);
+    const hiddenButtons = buttons.filter(button => button.classList.contains('tnl-hidden'));
+
+    directButtons.forEach(button => actions.insertBefore(button, moreButton));
+    overflowButtons.forEach(button => moreMenu.append(button));
+    hiddenButtons.forEach(button => moreMenu.append(button));
+
+    const hasOverflow = overflowButtons.length > 0;
+    moreButton.classList.toggle('tnl-hidden', !hasOverflow);
+    actions.style.setProperty('--tnl-header-action-columns', String(directButtons.length + (hasOverflow ? 1 : 0)));
+    if (!hasOverflow) moreMenu.classList.remove('open');
+}
+
+function scheduleHeaderActionLayout() {
+    if (headerActionLayoutFrame) return;
+    headerActionLayoutFrame = window.requestAnimationFrame(() => {
+        headerActionLayoutFrame = 0;
+        layoutHeaderActions();
+    });
+}
+
+function observeHeaderActionLayout() {
+    headerActionResizeObserver?.disconnect();
+    const panel = document.querySelector('#tavern-notes-lite-panel');
+    if (panel && typeof ResizeObserver === 'function') {
+        headerActionResizeObserver = new ResizeObserver(scheduleHeaderActionLayout);
+        headerActionResizeObserver.observe(panel);
+    }
+    scheduleHeaderActionLayout();
+}
+
 function closeHeaderPopovers() { document.querySelectorAll('.tnl-header-popover.open').forEach(menu => menu.classList.remove('open')); }
+function closeHeaderPopoverFromOutside(event) {
+    const openPopover = document.querySelector('.tnl-header-popover.open');
+    if (!openPopover) return;
+    if (event.target.closest?.('#tavern-notes-lite-more-open, .tnl-header-popover')) return;
+    closeHeaderPopovers();
+}
 function toggleHeaderPopover(id) {
     const target = document.getElementById(id);
     const shouldOpen = Boolean(target && !target.classList.contains('open'));
@@ -2499,7 +2638,7 @@ function getMessageTextFromElement(messageElement, rawMessage = '') {
         messageElement,
         rawMessage,
         selectors: getFloorCaptureSelectors(),
-        excludeSelector: FLOOR_CAPTURE_EXCLUDE_SELECTOR,
+        excludeSelector: buildFloorExcludeSelector(FLOOR_CAPTURE_EXCLUDE_SELECTOR, state.floorCaptureExcludedTags),
     });
 }
 
@@ -2518,7 +2657,7 @@ async function captureMessageFloor(messageElement) {
     const messageId = getMessageIdFromElement(messageElement);
     const message = messageId !== null ? chat?.[messageId] : null;
     const content = getMessageTextFromElement(messageElement, message?.mes)
-        || htmlToPlainText(message?.mes || '').trim();
+        || htmlToPlainText(stripExcludedTagsFromHtml({ documentRef: document, html: message?.mes, excludedTagNames: state.floorCaptureExcludedTags })).trim();
 
     if (!content) {
         notify(t('captureFloorEmpty'), 'warning');
@@ -2558,6 +2697,12 @@ function getSelectionMessageId(selection = window.getSelection()) {
 
 function rememberSelection() {
     if (!state.showSelectionCaptureButton) return;
+    const active = document.activeElement;
+    if (active && ['INPUT', 'TEXTAREA'].includes(active.tagName)
+        && active.selectionStart === active.selectionEnd) {
+        hideSelectionCaptureButton();
+        return;
+    }
     const snapshot = getCurrentSelectionSnapshot();
     if (!snapshot?.text) {
         hideSelectionCaptureButton();
@@ -2685,6 +2830,7 @@ function getCurrentSelectionSnapshot() {
 }
 
 function ensureSelectionCaptureButton() {
+    if (state.disabledByFull) return null;
     let button = document.querySelector('#tavern-notes-lite-selection-capture');
     if (button) return button;
     button = document.createElement('button');
@@ -2719,6 +2865,10 @@ function dismissSelectionCaptureButton() {
 }
 
 function updateSelectionCaptureButton() {
+    if (state.disabledByFull) {
+        hideSelectionCaptureButton();
+        return;
+    }
     if (!state.showSelectionCaptureButton) {
         hideSelectionCaptureButton();
         return;
@@ -2755,6 +2905,10 @@ function updateSelectionCaptureButton() {
 }
 
 function scheduleSelectionCaptureButton(event = null) {
+    if (state.disabledByFull) {
+        hideSelectionCaptureButton();
+        return;
+    }
     if (!state.showSelectionCaptureButton) {
         hideSelectionCaptureButton();
         return;
@@ -2770,7 +2924,6 @@ function bindSelectionListeners(root) {
     state.boundSelectionRoots.add(root);
     root.addEventListener('selectionchange', rememberSelection);
     root.addEventListener('mouseup', scheduleSelectionCaptureButton);
-    root.addEventListener('keyup', scheduleSelectionCaptureButton);
     root.addEventListener('select', scheduleSelectionCaptureButton, true);
     root.addEventListener('touchend', scheduleSelectionCaptureButton, { passive: true });
 }
@@ -2799,9 +2952,19 @@ function watchSelectionFrames() {
     bindIframeSelectionListeners();
     bindShadowSelectionListeners();
     if (state.selectionFrameObserver) return;
-    state.selectionFrameObserver = new MutationObserver(() => {
-        bindIframeSelectionListeners();
-        bindShadowSelectionListeners();
+    state.selectionFrameObserver = new MutationObserver(records => {
+        for (const record of records) {
+            for (const node of record.addedNodes) {
+                if (!(node instanceof Element)) continue;
+                if (node.matches('iframe')) {
+                    try { if (node.contentDocument) bindSelectionListeners(node.contentDocument); } catch { /* cross-origin */ }
+                }
+                node.querySelectorAll?.('iframe').forEach(frame => {
+                    try { if (frame.contentDocument) bindSelectionListeners(frame.contentDocument); } catch { /* cross-origin */ }
+                });
+                bindShadowSelectionListeners(node);
+            }
+        }
     });
     state.selectionFrameObserver.observe(document.body, { childList: true, subtree: true });
 }
@@ -2835,7 +2998,6 @@ async function captureUserMessage(messageId) {
 }
 
 function setActiveFilter(filter) {
-    if (!state.autoCaptureUserInput && filter === 'user_input') filter = 'all';
     state.filter = filter;
     if (filter === 'characters') state.characterFilter = null;
     state.page = 1;
@@ -2880,7 +3042,7 @@ function buildPanel() {
             <header class="tnl-header">
                 <div class="tnl-brand-mark">${renderDefaultIcon(DEFAULT_OPEN_ICON_URL)}</div>
                 <div class="tnl-heading">
-                    <div class="tnl-title">${htmlEscape(t('appName'))} <span>@KKM</span></div>
+                    <div class="tnl-title">${htmlEscape(t('appName'))} <span>@KKM</span><button id="tavern-notes-lite-update-indicator" class="tnl-update-indicator tnl-hidden" type="button" title="${htmlEscape(t('viewUpdate'))}" aria-label="${htmlEscape(t('viewUpdate'))}"><i></i><span data-update-indicator-version></span></button></div>
                     <div class="tnl-subtitle">${htmlEscape(t('subtitle'))}</div>
                 </div>
                 <div class="tnl-window-actions">
@@ -2889,21 +3051,21 @@ function buildPanel() {
                     </button>
                     <label class="tnl-language-select" title="${htmlEscape(t('language'))}">
                         <i class="fa-solid fa-language"></i>
-                        <select id="tavern-notes-lite-language">
+                        <select id="tavern-notes-lite-language" aria-label="${htmlEscape(t('language'))}">
                             ${LANGUAGE_OPTIONS.map(option => `<option value="${option.id}" ${option.id === state.language ? 'selected' : ''}>${option.id === 'auto' ? htmlEscape(t('autoLanguage')) : htmlEscape(option.label)}</option>`).join('')}
                         </select>
                     </label>
+                    <button id="tavern-notes-lite-theme" class="tnl-icon-button" title="${htmlEscape(t('openThemePanel'))}" aria-label="${htmlEscape(t('openThemePanel'))}"><i class="fa-solid fa-palette"></i></button>
                     <button class="tnl-icon-button tnl-close" title="${htmlEscape(t('closeNotes'))}" aria-label="${htmlEscape(t('closeNotes'))}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <div class="tnl-header-actions">
-                    <button id="tavern-notes-lite-new-note-open" class="tnl-soft-button"><i class="fa-solid fa-pen-to-square"></i><span>${htmlEscape(t('newNote'))}</span></button>
+                    <button id="tavern-notes-lite-new-note-open" class="tnl-soft-button" title="${htmlEscape(t('newNote'))}" aria-label="${htmlEscape(t('newNote'))}"><i class="fa-solid fa-pen-to-square"></i><span>${htmlEscape(t('newNote'))}</span></button>
                     <button id="tavern-notes-lite-selection-capture-setting" class="tnl-soft-button ${state.showSelectionCaptureButton ? 'active' : ''}" title="${htmlEscape(t('selectionCaptureButtonTitle'))}"><i class="fa-solid fa-highlighter"></i><span>${htmlEscape(t('captureSelected'))}</span></button>
                     <button id="tavern-notes-lite-floor-capture-open" class="tnl-soft-button ${state.showFloorCaptureButton ? 'active' : ''}" title="${htmlEscape(t('floorCaptureEntryTitle'))}"><i class="fa-solid fa-file-lines"></i><span>${htmlEscape(t('captureFloor'))}</span></button>
-                    <button id="tavern-notes-lite-theme" class="tnl-soft-button" title="${htmlEscape(t('openThemePanel'))}"><i class="fa-solid fa-palette"></i><span>${htmlEscape(t('theme'))}</span></button>
-                    <button id="tavern-notes-lite-more-open" class="tnl-soft-button"><i class="fa-solid fa-ellipsis"></i><span>${htmlEscape(t('more'))}</span></button>
-                    <div id="tavern-notes-lite-more-menu" class="tnl-header-popover tnl-header-secondary"><button id="tavern-notes-lite-auto-user-input" class="tnl-soft-button ${state.autoCaptureUserInput ? 'active' : ''}" title="${htmlEscape(t('autoCaptureUserInputTitle'))}"><i class="fa-solid fa-keyboard"></i><span>${htmlEscape(t('autoCaptureUserInput'))}</span></button><button id="tavern-notes-lite-user-input-cleanup-open" class="tnl-soft-button" title="${htmlEscape(t('userInputCleanupIntro'))}"><i class="fa-solid fa-filter-circle-xmark"></i><span>${htmlEscape(t('userInputCleanup'))}</span></button><button id="tavern-notes-lite-export" class="tnl-soft-button" title="${htmlEscape(t('exportNotes'))}"><i class="fa-solid fa-download"></i><span>${htmlEscape(t('exportNotes'))}</span></button><button id="tavern-notes-lite-reset-floating" class="tnl-soft-button" title="${htmlEscape(t('resetFloatingPosition'))}"><i class="fa-solid fa-location-crosshairs"></i><span>${htmlEscape(t('resetFloatingPosition'))}</span></button><button id="tavern-notes-lite-apple-mode-main" class="tnl-soft-button tnl-hidden"><i class="fa-solid fa-moon"></i><span>${htmlEscape(t('appleThemeNight'))}</span></button></div>
+                    <button id="tavern-notes-lite-more-open" class="tnl-soft-button" title="${htmlEscape(t('more'))}" aria-label="${htmlEscape(t('more'))}"><i class="fa-solid fa-ellipsis"></i><span>${htmlEscape(t('more'))}</span></button>
+                    <div id="tavern-notes-lite-more-menu" class="tnl-header-popover tnl-header-secondary"><button id="tavern-notes-lite-auto-user-input" class="tnl-soft-button ${state.autoCaptureUserInput ? 'active' : ''}" title="${htmlEscape(t('autoCaptureUserInputTitle'))}"><i class="fa-solid fa-keyboard"></i><span>${htmlEscape(t('autoCaptureUserInput'))}</span></button><button id="tavern-notes-lite-user-input-cleanup-open" class="tnl-soft-button" title="${htmlEscape(t('userInputCleanupIntro'))}"><i class="fa-solid fa-filter-circle-xmark"></i><span>${htmlEscape(t('userInputCleanup'))}</span></button><button id="tavern-notes-lite-export" class="tnl-soft-button" title="${htmlEscape(t('exportNotes'))}"><i class="fa-solid fa-download"></i><span>${htmlEscape(t('exportNotes'))}</span></button><button id="tavern-notes-lite-update-open" class="tnl-soft-button" title="${htmlEscape(t('updateCenter'))}"><i class="fa-solid fa-clock-rotate-left"></i><span>${htmlEscape(t('updateCenter'))}</span></button><button id="tavern-notes-lite-reset-floating" class="tnl-soft-button" title="${htmlEscape(t('resetFloatingPosition'))}"><i class="fa-solid fa-location-crosshairs"></i><span>${htmlEscape(t('resetFloatingPosition'))}</span></button><button id="tavern-notes-lite-apple-mode-main" class="tnl-soft-button tnl-hidden"><i class="fa-solid fa-moon"></i><span>${htmlEscape(t('appleThemeNight'))}</span></button></div>
                 </div>
             </header>
             <div class="tnl-search-row">
@@ -2943,6 +3105,13 @@ function buildPanel() {
                     <div class="tnl-modal-kicker"></div>
                     <div class="tnl-modal-title"></div>
                     <div class="tnl-modal-content"></div>
+                    <div class="tnl-modal-actions">
+                        <button type="button" data-modal-action="fill" title="${htmlEscape(t('fillInput'))}" aria-label="${htmlEscape(t('fillInput'))}"><i class="fa-solid fa-arrow-turn-down"></i><span>${htmlEscape(t('fillInput'))}</span></button>
+                        <button type="button" data-modal-action="copy" title="${htmlEscape(t('copy'))}" aria-label="${htmlEscape(t('copy'))}"><i class="fa-solid fa-copy"></i><span>${htmlEscape(t('copy'))}</span></button>
+                        <button type="button" data-modal-action="share" title="${htmlEscape(t('share'))}" aria-label="${htmlEscape(t('share'))}"><i class="fa-solid fa-share-nodes"></i><span>${htmlEscape(t('share'))}</span></button>
+                        <button type="button" data-modal-action="edit" title="${htmlEscape(t('edit'))}" aria-label="${htmlEscape(t('edit'))}"><i class="fa-solid fa-pen"></i><span>${htmlEscape(t('edit'))}</span></button>
+                        <button type="button" data-modal-action="delete" title="${htmlEscape(t('delete'))}" aria-label="${htmlEscape(t('delete'))}"><i class="fa-solid fa-trash"></i><span>${htmlEscape(t('delete'))}</span></button>
+                    </div>
                 </div>
             </div>
             <div id="tavern-notes-lite-edit-menu" aria-hidden="true">
@@ -3030,16 +3199,31 @@ function buildPanel() {
                         <b>${htmlEscape(t('floorCaptureTroubleTitle'))}</b>
                         <small>${htmlEscape(t('floorCaptureTroubleHelp'))}</small>
                     </div>
-                    <details class="tnl-floor-capture-advanced">
-                        <summary>${htmlEscape(t('floorCaptureAdvanced'))}</summary>
+                    <section class="tnl-floor-exclude-section">
+                        <div><b>${htmlEscape(t('excludeTagsTitle'))}</b><small>${htmlEscape(t('excludeTagsHelp'))}</small></div>
+                        <div class="tnl-floor-exclude-add"><input id="tavern-notes-lite-floor-exclude-input" class="text_pole" type="text" placeholder="${htmlEscape(t('excludeTagPlaceholder'))}"><button id="tavern-notes-lite-floor-exclude-add" type="button" title="${htmlEscape(t('addExcludedTag'))}" aria-label="${htmlEscape(t('addExcludedTag'))}"><i class="fa-solid fa-plus"></i><span>${htmlEscape(t('addExcludedTag'))}</span></button></div>
+                        <div id="tavern-notes-lite-floor-exclude-tags" class="tnl-floor-exclude-tags"></div>
+                    </section>
+                    <section class="tnl-floor-content-tag-section">
+                        <div><b>${htmlEscape(t('floorCaptureAdvanced'))}</b><small>${htmlEscape(t('floorCaptureSelectorHelp'))}</small></div>
                         <div id="tavern-notes-lite-floor-capture-selector-summary" class="tnl-floor-capture-selector-summary"></div>
-                        <label class="tnl-floor-selector-row" title="${htmlEscape(t('floorCaptureSelectorHelp'))}">
-                            <span>${htmlEscape(t('floorCaptureSelectorLabel'))}</span>
+                        <div class="tnl-floor-selector-add">
                             <input id="tavern-notes-lite-floor-capture-selector" class="text_pole" type="text" value="${htmlEscape(getFloorCaptureTagName())}" placeholder="${htmlEscape(t('floorCaptureSelectorPlaceholder'))}" />
-                        </label>
-                        <small>${htmlEscape(t('floorCaptureSelectorHelp'))}</small>
-                    </details>
+                            <button id="tavern-notes-lite-floor-capture-selector-save" type="button"><i class="fa-solid fa-floppy-disk"></i><span>${htmlEscape(t('save'))}</span></button>
+                        </div>
+                    </section>
                 </div>
+            </div>
+            <div id="tavern-notes-lite-update-menu" aria-hidden="true">
+                <section class="tnl-update-card">
+                    <button class="tnl-icon-button tnl-update-close" type="button" title="${htmlEscape(t('close'))}" aria-label="${htmlEscape(t('close'))}"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="tnl-update-heading"><span><i class="fa-solid fa-clock-rotate-left"></i></span><div><div class="tnl-export-title">${htmlEscape(t('updateCenter'))}</div><p>${htmlEscape(t('updateCenterIntro'))}</p></div></div>
+                    <div class="tnl-update-summary"><div><small>${htmlEscape(t('installedVersion'))}</small><b data-update-installed>v${htmlEscape(EXTENSION_VERSION)}</b></div><i class="fa-solid fa-arrow-right"></i><div><small>${htmlEscape(t('latestVersion'))}</small><b data-update-latest>—</b></div><strong data-update-status>${htmlEscape(t('checkUpdates'))}</strong></div>
+                    <div class="tnl-update-actions"><button id="tavern-notes-lite-update-check" type="button"><i class="fa-solid fa-rotate"></i><span>${htmlEscape(t('checkUpdates'))}</span></button><button id="tavern-notes-lite-update-manager" type="button"><i class="fa-solid fa-cubes"></i><span>${htmlEscape(t('openExtensionManager'))}</span></button><button id="tavern-notes-lite-update-repository" type="button"><i class="fa-brands fa-github"></i><span>${htmlEscape(t('openRepository'))}</span></button></div>
+                    <small class="tnl-update-instructions">${htmlEscape(t('updateInstructions'))}</small>
+                    <div class="tnl-update-log-heading"><i class="fa-regular fa-clipboard"></i><b>${htmlEscape(t('changelogTitle'))}</b></div>
+                    <div id="tavern-notes-lite-update-log" class="tnl-update-log"><div class="tnl-update-empty">${htmlEscape(t('noChangelog'))}</div></div>
+                </section>
             </div>
             <div id="tavern-notes-lite-user-input-cleanup-menu" aria-hidden="true">
                 <div class="tnl-user-input-cleanup-card">
@@ -3113,6 +3297,21 @@ function buildPanel() {
         </section>
     `);
 
+    const dialogIds = [
+        'tavern-notes-lite-new-note-menu',
+        'tavern-notes-lite-modal',
+        'tavern-notes-lite-edit-menu',
+        'tavern-notes-lite-tag-library',
+        'tavern-notes-lite-export-menu',
+        'tavern-notes-lite-floor-capture-menu',
+        'tavern-notes-lite-update-menu',
+        'tavern-notes-lite-user-input-cleanup-menu',
+        'tavern-notes-lite-theme-menu',
+        'tavern-notes-lite-share-menu',
+    ];
+    dialogIds.forEach(id => document.getElementById(id)?.setAttribute('data-tn-overlay', 'dialog'));
+    document.querySelector('#tavern-notes-lite-more-menu')?.setAttribute('data-tn-overlay', 'popover');
+
     addInputToolbar();
     addExtensionsMenuEntry();
     updateSelectionCaptureButtonSetting();
@@ -3125,6 +3324,12 @@ function bindEvents() {
     window.addEventListener('resize', () => applyFloatingLauncherPosition(document.querySelector('#tavern-notes-lite-floating-launcher')), { passive: true });
     document.querySelector('#tavern-notes-lite-new-note-open')?.addEventListener('click', openNewNoteMenu);
     document.querySelector('#tavern-notes-lite-more-open')?.addEventListener('click', () => toggleHeaderPopover('tavern-notes-lite-more-menu'));
+    document.querySelector('#tavern-notes-lite-update-open')?.addEventListener('click', openUpdateCenter);
+    document.querySelector('#tavern-notes-lite-update-indicator')?.addEventListener('click', openUpdateCenter);
+    document.querySelector('.tnl-update-close')?.addEventListener('click', closeUpdateCenter);
+    document.querySelector('#tavern-notes-lite-update-check')?.addEventListener('click', () => checkForTavernNotesUpdate({ notifyAvailable: false, throwOnError: true }).catch(() => notify(t('updateCheckFailed'), 'warning')));
+    document.querySelector('#tavern-notes-lite-update-manager')?.addEventListener('click', openSillyTavernExtensionManager);
+    document.querySelector('#tavern-notes-lite-update-repository')?.addEventListener('click', openUpdateRepository);
     document.querySelector('#tavern-notes-lite-reset-floating')?.addEventListener('click', resetFloatingLauncherPosition);
     document.querySelector('.tnl-new-note-close')?.addEventListener('click', closeNewNoteMenu);
     document.querySelector('#tavern-notes-lite-new-note-menu')?.addEventListener('click', event => { if (event.target.id === 'tavern-notes-lite-new-note-menu') closeNewNoteMenu(); });
@@ -3170,15 +3375,28 @@ function bindEvents() {
         const button = event.target.closest?.('.tnl-tag-filter');
         if (button) setTagFilter(button.dataset.tag || '');
     });
-    document.querySelector('#tavern-notes-lite-floor-capture-selector')?.addEventListener('change', event => saveFloorCaptureSelector(event.target.value));
+    document.querySelector('#tavern-notes-lite-floor-capture-selector-save')?.addEventListener('click', () => saveFloorCaptureSelector(document.querySelector('#tavern-notes-lite-floor-capture-selector')?.value));
+    document.querySelector('#tavern-notes-lite-floor-capture-selector')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); saveFloorCaptureSelector(event.target.value); } });
+    document.querySelector('#tavern-notes-lite-floor-exclude-add')?.addEventListener('click', addFloorCaptureExcludedTags);
+    document.querySelector('#tavern-notes-lite-floor-exclude-input')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addFloorCaptureExcludedTags(); } });
+    document.querySelector('#tavern-notes-lite-floor-exclude-tags')?.addEventListener('click', event => { const button = event.target.closest?.('[data-floor-exclude-remove]'); if (button) removeFloorCaptureExcludedTag(button.dataset.floorExcludeRemove || ''); });
     document.querySelector('.tnl-filters')?.addEventListener('click', event => {
         const tab = event.target.closest?.('.tnl-filter');
         if (!tab) return;
         setActiveFilter(tab.dataset.filter || 'all');
     });
     document.querySelector('#tavern-notes-lite-list')?.addEventListener('click', handleNoteAction);
+    document.querySelector('#tavern-notes-lite-list')?.addEventListener('keydown', event => {
+        if (!['Enter', ' '].includes(event.key) || !event.target.matches?.('.tnl-note')) return;
+        event.preventDefault();
+        const note = findNoteFromButton(event.target);
+        if (note) openFullNote(note);
+    });
     document.querySelector('#tavern-notes-lite-list')?.addEventListener('scroll', updateArchiveReadingMode, { passive: true });
     document.querySelector('.tnl-modal-close')?.addEventListener('click', closeFullNote);
+    document.querySelector('.tnl-modal-actions')?.addEventListener('click', event => {
+        handleModalNoteAction(event).catch(error => notify(error.message, 'error'));
+    });
     document.querySelector('#tavern-notes-lite-modal')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-modal') closeFullNote();
     });
@@ -3236,6 +3454,9 @@ function bindEvents() {
     });
     document.querySelector('#tavern-notes-lite-floor-capture-menu')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-floor-capture-menu') closeFloorCaptureMenu();
+    });
+    document.querySelector('#tavern-notes-lite-update-menu')?.addEventListener('click', event => {
+        if (event.target.id === 'tavern-notes-lite-update-menu') closeUpdateCenter();
     });
     document.querySelector('#tavern-notes-lite-user-input-cleanup-menu')?.addEventListener('click', event => {
         if (event.target.id === 'tavern-notes-lite-user-input-cleanup-menu') closeUserInputCleanupMenu();
@@ -3302,12 +3523,14 @@ function bindEvents() {
     document.querySelector('#tavern-notes-lite-theme-file')?.addEventListener('change', event => {
         importThemeFile(event).catch(error => notify(error.message, 'error'));
     });
+    document.addEventListener('pointerdown', closeHeaderPopoverFromOutside, true);
     document.addEventListener('keydown', event => {
         if (event.key !== 'Escape') return;
         closeFullNote();
         closeEditNote();
         closeTagLibrary();
         closeExportMenu();
+        closeUpdateCenter();
         closeThemeMenu();
         closeShareCard();
     });
@@ -3315,7 +3538,17 @@ function bindEvents() {
 
 async function handleNoteAction(event) {
     const button = event.target.closest('button');
-    if (!button) return;
+    const article = event.target.closest('.tnl-note');
+    if (!button) {
+        const note = article ? findNoteFromButton(article) : null;
+        if (note) openFullNote(note);
+        return;
+    }
+
+    if (button.classList.contains('tnl-note-menu-toggle')) {
+        toggleNoteActionMenu(article, 'tnl');
+        return;
+    }
 
     if (button.classList.contains('tnl-tag-chip')) {
         setTagFilter(button.dataset.tag || '');
@@ -3350,10 +3583,9 @@ async function handleNoteAction(event) {
 
     const note = findNoteFromButton(button);
     if (!note) return;
+    closeNoteActionMenus(article, 'tnl');
 
-    if (button.classList.contains('tnl-expand')) {
-        openFullNote(note);
-    } else if (button.classList.contains('tnl-copy')) {
+    if (button.classList.contains('tnl-copy')) {
         await navigator.clipboard.writeText(note.content);
         notify(t('copied'), 'success');
     } else if (button.classList.contains('tnl-fill')) {
@@ -4572,9 +4804,21 @@ async function confirmDelete(note) {
 function openFullNote(note) {
     const modal = document.querySelector('#tavern-notes-lite-modal');
     if (!modal) return;
+    closeNoteActionMenus(document.querySelector('#tavern-notes-lite-panel'), 'tnl');
+    const chatName = note.chat?.name || '';
+    const messageId = note.chat?.messageId ?? '-';
+    const tags = Array.isArray(note.tags) ? note.tags : [];
+    state.detailNote = note;
     modal.querySelector('.tnl-modal-kicker').textContent = `${noteTypeLabel(note.type)} · ${note.character?.name || '未命名角色'}`;
     modal.querySelector('.tnl-modal-title').textContent = note.createdAt ? new Date(note.createdAt).toLocaleString() : '全文';
-    modal.querySelector('.tnl-modal-content').innerHTML = renderQuotedText(note.content);
+    modal.querySelector('.tnl-modal-content').innerHTML = `
+        <div class="tnl-modal-note-text">${renderQuotedText(note.content)}</div>
+        <div class="tnl-modal-note-meta">
+            ${chatName ? `<span>${htmlEscape(chatName)}</span>` : ''}
+            <span>#${htmlEscape(messageId)}</span>
+            ${tags.map(tag => `<span>#${htmlEscape(tag)}</span>`).join('')}
+        </div>
+    `;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
 }
@@ -4583,6 +4827,44 @@ function closeFullNote() {
     const modal = document.querySelector('#tavern-notes-lite-modal');
     modal?.classList.remove('open');
     modal?.setAttribute('aria-hidden', 'true');
+    state.detailNote = null;
+}
+
+async function handleModalNoteAction(event) {
+    const button = event.target.closest?.('[data-modal-action]');
+    const note = state.detailNote;
+    if (!button || !note) return;
+    const action = button.dataset.modalAction;
+    if (action === 'copy') {
+        await navigator.clipboard.writeText(note.content);
+        notify(t('copied'), 'success');
+        return;
+    }
+    if (action === 'fill') {
+        writeInput(note.content, false);
+        closeFullNote();
+        closePanel();
+        notify(t('filled'), 'success');
+        return;
+    }
+    if (action === 'share') {
+        closeFullNote();
+        openShareCard(note);
+        return;
+    }
+    if (action === 'edit') {
+        closeFullNote();
+        openEditNote(note);
+        return;
+    }
+    if (action === 'delete') {
+        const confirmed = await confirmDelete(note);
+        if (!confirmed) return;
+        await api(`/notes/${encodeURIComponent(note.id)}`, { method: 'DELETE' });
+        closeFullNote();
+        await refreshNotes();
+        notify(t('deleted'), 'success');
+    }
 }
 
 function parseTagsInput(value) {
@@ -4709,6 +4991,7 @@ function normalizeTheme(theme) {
 
 function normalizeAppleThemeId(id = state.activeThemeId) {
     if (id === LEGACY_APPLE_THEME_DAY_ID || id === LEGACY_APPLE_THEME_NIGHT_ID) return APPLE_THEME_ID;
+    if (RETIRED_SECRET_FILES_THEME_IDS.has(String(id || '').trim().toLowerCase())) return 'default';
     return id;
 }
 
@@ -4741,10 +5024,9 @@ function paintTheme(theme) {
     const clean = applyDefaultThemeMode(applyAppleGlassMode(normalizeTheme(theme)));
     const panel = document.querySelector('#tavern-notes-lite-panel');
     if (panel) {
-        Object.entries(clean.variables).forEach(([key, value]) => {
-            if (key.startsWith('--tnl-')) panel.style.setProperty(key, String(value));
-        });
-        const flavor = String(clean.variables['--tnl-theme-flavor'] || '').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+        clean.variables['--tnl-theme-flavor'] = normalizeThemeFlavor(clean.variables['--tnl-theme-flavor']);
+        replaceThemeVariables(panel, clean.variables, '--tnl-');
+        const flavor = clean.variables['--tnl-theme-flavor'];
         if (flavor) panel.dataset.themeFlavor = flavor;
         else delete panel.dataset.themeFlavor;
         if (flavor === 'default') panel.dataset.themeMode = state.defaultThemeMode;
@@ -4808,6 +5090,7 @@ function updateAppleThemeModeButton() {
         const labelKey = isApple ? (isNight ? 'appleThemeDay' : 'appleThemeNight') : (isNight ? 'defaultThemeDay' : 'defaultThemeNight');
         button.querySelector('span')?.replaceChildren(document.createTextNode(t(labelKey)));
     }
+    scheduleHeaderActionLayout();
 }
 
 async function toggleAppleThemeMode() {
@@ -4983,21 +5266,37 @@ function addFloorCaptureButtons(root = document) {
         return;
     }
     const selector = root === document ? '#chat .mes[mesid], #chat .mes[data-mesid]' : '.mes[mesid], .mes[data-mesid]';
-    root.querySelectorAll?.(selector).forEach(messageElement => {
-        if (messageElement.querySelector(':scope > .tnl-floor-capture')) return;
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'tnl-floor-capture';
-        button.title = t('captureFloorTitle');
-        button.setAttribute('aria-label', t('captureFloorTitle'));
-        button.innerHTML = `<i class="fa-solid fa-file-lines"></i><span>${htmlEscape(t('captureFloor'))}</span>`;
-        button.addEventListener('click', event => {
-            event.preventDefault();
-            event.stopPropagation();
-            captureMessageFloor(messageElement).catch(error => notify(error.message, 'error'));
-        });
-        messageElement.append(button);
+    root.querySelectorAll?.(selector).forEach(ensureFloorCaptureButton);
+}
+
+function ensureFloorCaptureButton(messageElement) {
+    if (!state.showFloorCaptureButton || messageElement.querySelector(':scope > .tnl-floor-capture')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tnl-floor-capture';
+    button.title = t('captureFloorTitle');
+    button.setAttribute('aria-label', t('captureFloorTitle'));
+    button.innerHTML = `<i class="fa-solid fa-file-lines"></i><span>${htmlEscape(t('captureFloor'))}</span>`;
+    button.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        captureMessageFloor(messageElement).catch(error => notify(error.message, 'error'));
     });
+    messageElement.append(button);
+}
+
+function addFloorCaptureButtonsFromMutations(records) {
+    const messages = new Set();
+    for (const record of records) {
+        for (const node of record.addedNodes) {
+            if (!(node instanceof Element)) continue;
+            const parentMessage = node.closest?.('.mes[mesid], .mes[data-mesid]');
+            if (parentMessage) messages.add(parentMessage);
+            if (node.matches?.('.mes[mesid], .mes[data-mesid]')) messages.add(node);
+            node.querySelectorAll?.('.mes[mesid], .mes[data-mesid]').forEach(message => messages.add(message));
+        }
+    }
+    messages.forEach(ensureFloorCaptureButton);
 }
 
 function watchChatMessages() {
@@ -5012,7 +5311,7 @@ function watchChatMessages() {
         setTimeout(watchChatMessages, 800);
         return;
     }
-    state.floorCaptureObserver = new MutationObserver(() => addFloorCaptureButtons(chatContainer));
+    state.floorCaptureObserver = new MutationObserver(addFloorCaptureButtonsFromMutations);
     state.floorCaptureObserver.observe(chatContainer, { childList: true, subtree: true });
 }
 
@@ -5139,7 +5438,9 @@ function watchQuickReplyBar() {
         setTimeout(watchQuickReplyBar, 800);
         return;
     }
-    state.qrBarObserver = new MutationObserver(() => addInputToolbar());
+    state.qrBarObserver = new MutationObserver(() => {
+        if (!document.querySelector('#tavern-notes-lite-open') || !document.querySelector('#tavern-notes-lite-capture')) addInputToolbar();
+    });
     state.qrBarObserver.observe(sendForm, { childList: true, subtree: true });
 }
 
@@ -5162,6 +5463,7 @@ async function openPanel() {
     state.open = true;
     panel.classList.remove('tnl-archive-reading');
     panel.classList.add('open');
+    scheduleHeaderActionLayout();
     updateFloatingLauncher();
     await refreshNotes();
     const list = document.querySelector('#tavern-notes-lite-list');
@@ -5171,6 +5473,16 @@ async function openPanel() {
 function closePanel() {
     const panel = document.querySelector('#tavern-notes-lite-panel');
     if (!panel) return;
+    closeHeaderPopovers();
+    closeNewNoteMenu();
+    closeFullNote();
+    closeEditNote();
+    closeTagLibrary();
+    closeExportMenu();
+    closeFloorCaptureMenu();
+    closeUserInputCleanupMenu();
+    closeThemeMenu();
+    closeShareCard();
     state.open = false;
     panel.classList.remove('open');
     updateFloatingLauncher();
@@ -5183,6 +5495,9 @@ function fullExtensionIsActive() {
 function disableLiteForFull() {
     if (state.disabledByFull) return;
     state.disabledByFull = true;
+    clearTimeout(state.selectionButtonTimer);
+    state.selectionButtonTimer = null;
+    state.lastSelection = null;
     removeMobileViewportGuard();
     stopFloorCaptureWatcher();
     state.qrBarObserver?.disconnect();
@@ -5232,6 +5547,7 @@ async function init() {
     installMobileViewportGuard();
     await openLiteDatabase();
     buildPanel();
+    observeHeaderActionLayout();
     applyShareFontImport();
     await loadTheme();
     addInputToolbar();

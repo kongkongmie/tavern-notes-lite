@@ -1,5 +1,5 @@
 import { parseHTML } from 'linkedom';
-import { extractFloorText } from '../floor-capture.js';
+import { buildFloorExcludeSelector, extractFloorText, normalizeExcludedTagNames, stripExcludedTagsFromHtml } from '../floor-capture.js';
 
 const selectors = ['content', '.content', '[data-tavern-notes-content]', '[data-note-content]', '.comment', '.mes_text'];
 const excludeSelector = 'details,summary,pre,code,script,style,button,[role="button"]';
@@ -48,6 +48,21 @@ const multipleResult = extractFloorText({
     excludeSelector,
 });
 
+const excluded = messageElement('<div class="mes_text"><content>保留开头<thinking>删除秘密推理</thinking>保留结尾<status>删除状态</status></content></div>');
+const excludedTags = normalizeExcludedTagNames('thinking, <status> thinking invalid.class');
+const excludedResult = extractFloorText({
+    documentRef: excluded.document,
+    messageElement: excluded.element,
+    rawMessage: '<content>保留开头<thinking>删除秘密推理</thinking>保留结尾<status>删除状态</status></content>',
+    selectors,
+    excludeSelector: buildFloorExcludeSelector(excludeSelector, excludedTags),
+});
+const strippedFallback = stripExcludedTagsFromHtml({
+    documentRef: excluded.document,
+    html: '保留<thinking>删除</thinking><status>也删除</status>结尾',
+    excludedTagNames: excludedTags,
+});
+
 const checks = {
     rawContentRecovered: recovered === longText,
     collapsedSummaryExcluded: !recovered.includes('8000字+'),
@@ -55,6 +70,9 @@ const checks = {
     renderedContentFallback: renderedResult === '页面里的明确正文',
     customTagSupported: customResult === '自定义标签正文',
     multipleContentTagsMerged: multipleResult === '第一段正文\n\n第二段正文',
+    excludedTagsNormalized: excludedTags.join(',') === 'thinking,status',
+    excludedTagBodiesRemoved: excludedResult === '保留开头保留结尾',
+    fallbackAlsoExcludesTags: strippedFallback === '保留结尾',
 };
 
 console.log(JSON.stringify({ lengths: { expected: longText.length, recovered: recovered.length }, checks }, null, 2));
