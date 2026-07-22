@@ -150,6 +150,18 @@ function userInputContextKey(note) {
         .map(value => String(value).replaceAll('|', '\\|')).join('|');
 }
 
+function excerptDedupeKey(note) {
+    if (note?.type !== 'excerpt') return '';
+    return [
+        note?.character?.id ?? '',
+        note?.character?.name ?? '',
+        note?.chat?.id ?? '',
+        note?.chat?.name ?? '',
+        note?.chat?.messageId ?? '',
+        String(note?.content || '').trim().replace(/\s+/g, ' '),
+    ].map(value => String(value).replaceAll('|', '\\|')).join('|');
+}
+
 function findUserInputDedupeGroups(notes) {
     const groups = new Map();
     const previousByContext = new Map();
@@ -295,6 +307,11 @@ function characterSummaries(notes) {
 
 async function addNote(payload) {
     const database = await openLiteDatabase();
+    if (payload?.type === 'excerpt') {
+        const excerptKey = excerptDedupeKey(payload);
+        const duplicate = (await readAllNotes()).find(note => excerptDedupeKey(note) === excerptKey);
+        if (duplicate) return { note: duplicate, deduplicated: true };
+    }
     if (payload?.type === 'user_input' && payload?.collapseRepeated !== false) {
         const notes = await readAllNotes();
         const contextKey = userInputContextKey(payload);

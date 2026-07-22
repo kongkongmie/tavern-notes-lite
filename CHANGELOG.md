@@ -10,6 +10,9 @@
 - Added an in-app update center with version checks, the default changelog, and optional author-maintained Chinese annotations from `CHANGELOG.zh-CN.md`.
 - Kept manual USER inspiration notes visible when automatic User input recording is disabled; the recording switch now controls capture only, not visibility.
 - Reduced broad DOM rescans during selection, message, and toolbar observation to improve responsiveness while messages stream.
+- Toned down stacked day/night theme highlights and removed the white halo around share-card background swatches.
+- Prevented repeated captures of the same excerpt in the same message from creating duplicate notes, including whitespace-only variations.
+- Ensured the floating selection-capture button clears embedded selections and stays dismissed after a successful capture.
 - Completed Simplified Chinese, Traditional Chinese, English, and Korean coverage for the new controls and states.
 - Existing Lite notes remain in the same IndexedDB database and keep the Full-compatible export/import format.
 

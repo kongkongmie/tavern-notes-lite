@@ -31,6 +31,9 @@ const afterTagDelete = await storage.liteApi('/notes?limit=15&offset=0');
 const userBase = { type: 'user_input', content: '/qr fixed', character: { id: 1, name: 'Alpha' }, chat: { id: 'chat-b', name: 'Chat B', messageId: 10 } };
 const firstInput = await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify(userBase) });
 const repeatedInput = await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify({ ...userBase, chat: { ...userBase.chat, messageId: 11 } }) });
+const excerptBase = { type: 'excerpt', content: 'same excerpt', character: { id: 1, name: 'Alpha' }, chat: { id: 'chat-b', name: 'Chat B', messageId: 22 }, source: 'selected_text' };
+const firstExcerpt = await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify(excerptBase) });
+const repeatedExcerpt = await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify({ ...excerptBase, content: '  same   excerpt  ' }) });
 await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify({ ...userBase, content: 'break', chat: { ...userBase.chat, messageId: 12 } }) });
 const afterBreak = await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify({ ...userBase, chat: { ...userBase.chat, messageId: 13 } }) });
 await storage.liteApi('/notes', { method: 'POST', body: JSON.stringify({ ...userBase, content: 'legacy', collapseRepeated: false, chat: { ...userBase.chat, messageId: 14 } }) });
@@ -64,14 +67,15 @@ const checks = {
     tagDeletedEverywhere: removedTag.updated === 1 && afterTagDelete.notes.find(note => note.id === 'full-1')?.tags.join(',') === 'plot',
     characterSummary: characters.characters.length === 2 && characters.characters[0].isUser === true && characters.characters.some(character => character.name === 'Alpha'),
     consecutiveCollapsed: firstInput.deduplicated === false && repeatedInput.deduplicated === true && repeatedInput.note.repeatCount === 2 && repeatedInput.note.latestMessageId === 11,
+    excerptDeduplicated: repeatedExcerpt.deduplicated === true && repeatedExcerpt.note.id === firstExcerpt.note.id,
     breakStopsCollapse: afterBreak.deduplicated === false,
     historicalDedupe: dedupePreview.duplicateNotes === 2 && legacyPreview?.occurrences === 2 && dedupeResult.duplicateNotes === 1 && legacy.totalNotes === 3 && legacy.notes.find(note => note.content === 'legacy')?.repeatCount === 2 && legacy.notes.filter(note => note.content === 'legacy two').length === 2,
     manualInspiration: previewAfterManual.duplicateNotes === 1 && manualWithAutoInputOff.totalNotes === 2 && autoWithAutoInputOff.totalNotes === 0 && renamed.updated === 2 && renamedExport.notes.filter(note => note.tags.includes('剧情脑洞')).length === 2 && renamedNotes.notes[0].character.isUser === true,
     compatibleExport: exported.format === 'tavern-notes-export'
-        && exported.notes.length === 11
+        && exported.notes.length === 12
         && exported.notes.find(note => note.id === 'full-1')?.content === 'alpha excerpt edited'
         && exported.notes.find(note => note.id === 'full-1')?.tags.join(',') === 'plot',
-    storageCount: info.count === 11 && info.approximateBytes > 0,
+    storageCount: info.count === 12 && info.approximateBytes > 0,
 };
 
 console.log(JSON.stringify({ first, duplicate, checks }, null, 2));

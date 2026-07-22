@@ -25,4 +25,9 @@ assert.match(css, /\.tnl-window-actions > \.tnl-language-select[\s\S]*?border-ra
 assert.match(storage, /note\.source === 'manual_inspiration'/);
 assert.doesNotMatch(source, /params\.set\('includeUserInput'/, 'recording toggle must not hide stored notes');
 assert.match(source, /async function captureUserMessage[\s\S]*?if \(!state\.autoCaptureUserInput\) return;/, 'recording toggle must still stop automatic capture');
+assert.match(css, /--tnl-panel-shadow:\s*0 18px 48px rgba\(74, 68, 58, 0\.18\)/, 'default day panel should use one restrained outer shadow');
+assert.doesNotMatch(css, /26px 26px 58px[\s\S]{0,120}-18px -18px 42px/, 'default day panel must not restore the bidirectional glow');
+assert.match(css, /\.tnl-share-bg\s*\{[\s\S]*?box-shadow:\s*0 2px 7px rgba\(0, 0, 0, 0\.16\)/, 'share background swatches should not use a white outer glow');
+assert.match(source, /selectionDismissedUntil = Date\.now\(\) \+ 1000/);
+assert.match(source, /frame\.contentWindow\?\.getSelection\?\.\(\)/, 'capture dismissal should also clear embedded selections');
 console.log('Lite follow-up regression test passed.');
