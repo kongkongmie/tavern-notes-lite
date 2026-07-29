@@ -2155,7 +2155,7 @@
     background: radial-gradient(circle at 16% 4%, rgba(103,137,158,.18), transparent 30%), radial-gradient(circle at 88% 12%, rgba(215,131,143,.1), transparent 28%), linear-gradient(155deg, #26323d, #1a222b 68%, #151c24);
     border-color: rgba(151,177,193,.22); box-shadow: 0 28px 70px rgba(3,8,13,.58), inset 0 1px 0 rgba(211,228,237,.08);
 }
-#tavern-notes-lite-panel[data-theme-flavor="default"][data-theme-mode="night"] .tnl-header { background: linear-gradient(180deg, rgba(48,65,78,.72), rgba(30,40,50,.2)); border-bottom: 1px solid rgba(159,183,198,.12); }
+#tavern-notes-lite-panel[data-theme-flavor="default"][data-theme-mode="night"] .tnl-header { background: linear-gradient(180deg, rgba(48,65,78,.72), rgba(30,40,50,.2)); border-bottom: 0; }
 #tavern-notes-lite-panel[data-theme-flavor="default"][data-theme-mode="night"] .tnl-soft-button,
 #tavern-notes-lite-panel[data-theme-flavor="default"][data-theme-mode="night"] .tnl-icon-button,
 #tavern-notes-lite-panel[data-theme-flavor="default"][data-theme-mode="night"] .tnl-language-select { border: 1px solid rgba(151,177,193,.1); box-shadow: 0 8px 18px rgba(4,9,14,.3), inset 0 1px 0 rgba(221,235,242,.06); }

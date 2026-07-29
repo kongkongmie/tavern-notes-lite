@@ -528,3 +528,122 @@
 .tn-export-scope-choice:active {
     transform: translateY(1px);
 }
+
+/* Compact main shell: keep controls accessible while giving the note list the remaining height. */
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 9px;
+    padding: 12px 18px 9px;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-brand-mark {
+    display: none;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-heading {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-title {
+    font-size: 29px;
+    line-height: 1;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-subtitle {
+    margin-top: 5px;
+    line-height: 1.25;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-subtitle::after {
+    display: none;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-window-actions {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    gap: 7px;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-window-actions
+    > :is(.tn-soft-button, .tn-icon-button, .tn-language-select) {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    flex-basis: 38px;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-header-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    margin: 0;
+    display: grid !important;
+    grid-template-columns: repeat(var(--tn-header-action-columns, var(--tnl-header-action-columns, 4)), minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-header-actions
+    > :is(.tn-soft-button, .tn-icon-button) {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border-radius: 14px;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-header-actions
+    > :is(.tn-soft-button, .tn-icon-button) span {
+    display: none !important;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-search-row {
+    margin: 0 18px 6px;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-tag-shelf {
+    min-height: 34px;
+    padding: 0 18px 6px;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-tag-shelf::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+:is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-footer {
+    flex-wrap: nowrap;
+    padding: 0 18px 9px;
+}
+
+@media (max-width: 980px) {
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-shell {
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 6px;
+        padding: 0 18px 6px;
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-filters {
+        gap: 7px;
+        padding: 0;
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-filter {
+        min-height: 42px;
+        padding: 5px;
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-list {
+        min-height: 0;
+        padding-top: 2px;
+    }
+}
