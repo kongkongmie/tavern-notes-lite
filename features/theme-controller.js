@@ -112,12 +112,13 @@ export function createThemeController({
     async function saveTheme(theme, options = {}) {
         const clean = themeModel.normalizeTheme(theme);
         const current = state();
+        const activate = options.activate !== false;
         const requestedId = options.id;
         const id = !requestedId || requestedId === 'default' || isAppleThemeId(requestedId)
             ? null
             : requestedId;
         const nextState = commitRepositoryState(
-            await repository.importTheme(clean, { id, activate: true }),
+            await repository.importTheme(clean, { id, activate }),
             clean,
         );
         if (options.notifyKey) notify(t(options.notifyKey), 'success');

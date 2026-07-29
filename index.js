@@ -10,11 +10,11 @@ import {
     user_avatar,
 } from '../../../../script.js';
 import { buildFloorExcludeSelector, extractFloorText, normalizeExcludedTagNames, stripExcludedTagsFromHtml } from './floor-capture.js';
-import { toLiteThemeVariables } from './theme-compat.js';
+import { toFullThemeVariables, toLiteThemeVariables } from './theme-compat.js';
 import { closeNoteActionMenus, renderNoteCards, toggleNoteActionMenu } from './core/note-card.js';
 import { createLocalThemeRepository } from './core/local-theme-repository.js';
 import { createThemeRepository } from './core/theme-repository.js';
-import { createBuiltInThemeRecords } from './core/theme-presets.js';
+import { createBuiltInThemeRecords, isRetiredLegacyTheme } from './core/theme-presets.js';
 import { createThemeModel } from './core/theme-model.js';
 import { createAppStore } from './core/app-store.js';
 import { createApplicationCapabilities } from './core/application-capabilities.js';
@@ -23,6 +23,7 @@ import { createSettingsRepository } from './core/settings-repository.js';
 import { NOTE_LIST_INITIAL_STATE, NOTE_UI_INITIAL_STATE, createNoteUiQuery } from './core/note-list-model.js';
 import { createThemeController } from './features/theme-controller.js';
 import { createThemeView, renderThemeViewMarkup } from './features/theme-view.js';
+import { createThemeStudio, renderThemeStudioMarkup } from './features/theme-studio.js';
 import { createNoteListController } from './features/note-list-controller.js';
 import { createNoteFilterController } from './features/note-filter-controller.js';
 import { createNoteMutationController } from './features/note-mutation-controller.js';
@@ -105,8 +106,8 @@ const DEFAULT_OPEN_ICON_URL = '/scripts/extensions/third-party/tavern-notes-lite
 const DEFAULT_CAPTURE_ICON_URL = '/scripts/extensions/third-party/tavern-notes-lite/assets/tavern-notes-lite-capture.png';
 const APPLE_THEME_ID = 'apple-glass';
 const THEME_CAPABILITIES = Object.freeze({
-    themeStudio: false,
-    exportTheme: false,
+    themeStudio: true,
+    exportTheme: true,
     openThemeFolder: false,
 });
 const APPLICATION_CAPABILITIES = createApplicationCapabilities({ coexistenceGuard: true });
@@ -118,7 +119,7 @@ const LEGACY_FLOOR_CAPTURE_SELECTOR = '.comment, [data-tavern-notes-content], [d
 const DEFAULT_FLOOR_CAPTURE_TAG = 'content';
 const DEFAULT_FLOOR_CAPTURE_SELECTOR = 'content, .content, [data-tavern-notes-content], [data-note-content], .comment, .mes_text';
 const FLOOR_CAPTURE_EXCLUDE_SELECTOR = [
-    '.tnl-floor-capture',
+    '.tn-floor-capture',
     '.mes_buttons',
     '.extraMesButtons',
     '.mes_edit_buttons',
@@ -288,7 +289,7 @@ const TEXT_ZH_CN = {
     liteFullInfoTitle: 'Lite 与 Full 版本',
     liteFullJsonCompatibility: 'Lite 导出的 JSON 笔记可直接导入 Full；Full 导出的 JSON 也可导入 Lite。',
     liteLimitations: 'Lite 无需安装后端，笔记只保存在当前浏览器中。它不会自动跨浏览器或设备共享；清除网站数据可能删除笔记，请定期导出 JSON 备份。',
-    fullAdvantages: 'Full 需要安装后端，但支持本地文件存储、每日自动备份、多端共享同一份数据，以及完整的主题制作与融合功能。',
+    fullAdvantages: 'Full 需要安装后端，并支持本地文件存储、每日自动备份，以及多端共享同一份数据。',
     importDone: '导入完成：新增 {imported} 条，跳过 {skipped} 条重复或空笔记。',
     invalidBackup: '无法导入：请选择酒馆笔记导出的 JSON 备份。',
     noPageNotesToExport: '当前页面没有可导出的笔记。',
@@ -298,6 +299,7 @@ const TEXT_ZH_CN = {
     themeFiles: '主题文件',
     currentTheme: '当前：{name}',
     themeName: '主题名称',
+    mergeTheme: '融合当前酒馆主题',
     themeGuide: '主题制作说明',
     preview: '预览',
     save: '保存',
@@ -465,7 +467,7 @@ const TEXT_ZH_CN = {
     appleThemeEnabled: '已切换 Apple Glass 主题。',
     previewTheme: '预览：{name}',
     unnamedTheme: '未命名主题',
-    previewSave: '预览并保存',
+    previewSave: '应用并保存',
     themeCalendar: '日历',
     themeJianshu: '简书',
     themeDialogue: '对话',
@@ -480,6 +482,7 @@ assets 控制标题图标和背景图；输入栏与摘录按钮使用固定默�
 `,
     invalidThemeFile: '这不是酒馆笔记主题文件。',
     previewedTheme: '已预览主题，还没有保存。',
+    mergedThemeDraft: '已生成融合主题草稿；当前主题未改变。点“应用并保存”才会切换当前主题。',
     savedAsTheme: '已另存为新主题。',
     savedTheme: '主题已保存。',
     switchedTheme: '主题已切换。',
@@ -492,6 +495,8 @@ assets 控制标题图标和背景图；输入栏与摘录按钮使用固定默�
     themeNameEmpty: '主题名称不能为空。',
     saveAction: '保存',
     saveAsAction: '另存为',
+    currentTavernTheme: '当前酒馆主题',
+    mergedThemeName: '融合酒馆主题 - {name}',
     confirmDeleteNote: '确定删除这条笔记吗？\n\n{preview}{ellipsis}',
     pasteFontFirst: '先粘贴字体地址或 @import 代码。',
     importedFont: '已导入字体：{name}',
@@ -518,7 +523,7 @@ const TEXTS = {
         liteFullInfoTitle: 'Lite 與 Full 版本',
         liteFullJsonCompatibility: 'Lite 匯出的 JSON 筆記可直接匯入 Full；Full 匯出的 JSON 也可匯入 Lite。',
         liteLimitations: 'Lite 不需安裝後端，筆記只保存在目前瀏覽器中。它不會自動跨瀏覽器或裝置共享；清除網站資料可能刪除筆記，請定期匯出 JSON 備份。',
-        fullAdvantages: 'Full 需安裝後端，但支援本機檔案儲存、每日自動備份、多端共用同一份資料，以及完整的主題製作與融合功能。',
+        fullAdvantages: 'Full 需安裝後端，並支援本機檔案儲存、每日自動備份，以及多端共用同一份資料。',
         importDone: '匯入完成：新增 {imported} 條，略過 {skipped} 條重複或空白筆記。',
         invalidBackup: '無法匯入：請選擇酒館筆記匯出的 JSON 備份。',
         noPageNotesToExport: '目前頁面沒有可匯出的筆記。',
@@ -532,6 +537,7 @@ const TEXTS = {
         themeFiles: '主題檔案',
         currentTheme: '目前：{name}',
         themeName: '主題名稱',
+        mergeTheme: '融合目前酒館主題',
         saveAs: '另存為',
         resetDefault: '恢復預設',
         importFont: '匯入字體',
@@ -658,7 +664,7 @@ const TEXTS = {
         appleThemeEnabled: '已切換 Apple Glass 主題。',
         previewTheme: '預覽：{name}',
         unnamedTheme: '未命名主題',
-        previewSave: '預覽並儲存',
+        previewSave: '套用並儲存',
         themeCalendar: '日曆',
         themeJianshu: '簡書',
         themeDialogue: '對話',
@@ -671,6 +677,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
 `,
         invalidThemeFile: '這不是酒館筆記主題檔案。',
         previewedTheme: '已預覽主題，尚未儲存。',
+        mergedThemeDraft: '已產生融合主題草稿；目前主題未變更。點「套用並儲存」才會切換目前主題。',
         savedAsTheme: '已另存為新主題。',
         savedTheme: '主題已儲存。',
         switchedTheme: '主題已切換。',
@@ -683,6 +690,8 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         themeNameEmpty: '主題名稱不能為空。',
         saveAction: '儲存',
         saveAsAction: '另存為',
+        currentTavernTheme: '目前酒館主題',
+        mergedThemeName: '融合酒館主題 - {name}',
         confirmDeleteNote: '確定刪除這條筆記嗎？\n\n{preview}{ellipsis}',
         pasteFontFirst: '先貼上字體地址或 @import 代碼。',
         importedFont: '已匯入字體：{name}',
@@ -720,7 +729,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         liteFullInfoTitle: 'Lite and Full',
         liteFullJsonCompatibility: 'JSON notes exported by Lite can be imported directly into Full, and Full JSON exports can also be imported into Lite.',
         liteLimitations: 'Lite needs no server plugin and stores notes only in this browser. It does not sync across browsers or devices, and clearing site data may delete notes. Export JSON backups regularly.',
-        fullAdvantages: 'Full requires the server plugin, but adds local file storage, daily automatic backups, shared data across devices, and complete theme creation and Tavern-theme merging.',
+        fullAdvantages: 'Full requires the server plugin and adds local file storage, daily automatic backups, and shared data across devices.',
         importDone: 'Import complete: {imported} added, {skipped} duplicates or empty notes skipped.',
         invalidBackup: 'Import failed. Choose a JSON backup exported by Tavern Notes.',
         noPageNotesToExport: 'There are no notes to export on this page.',
@@ -730,6 +739,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         themeFiles: 'Theme Files',
         currentTheme: 'Current: {name}',
         themeName: 'Theme name',
+        mergeTheme: 'Merge current Tavern theme',
         themeGuide: 'Theme guide',
         preview: 'Preview',
         save: 'Save',
@@ -894,7 +904,7 @@ assets 控制標題圖示和背景圖；輸入列與摘錄按鈕使用固定預�
         appleThemeEnabled: 'Apple Glass theme switched.',
         previewTheme: 'Preview: {name}',
         unnamedTheme: 'Untitled theme',
-        previewSave: 'Preview & save',
+        previewSave: 'Apply & save',
         themeCalendar: 'Calendar',
         themeJianshu: 'Jianshu',
         themeDialogue: 'Dialogue',
@@ -907,6 +917,7 @@ assets control the header icon and background image; the input-bar and capture b
 `,
         invalidThemeFile: 'This is not a Tavern Notes Lite theme file.',
         previewedTheme: 'Theme previewed. It is not saved yet.',
+        mergedThemeDraft: 'Merged theme draft created. The active theme is unchanged. Use Apply & save to switch themes.',
         savedAsTheme: 'Saved as a new theme.',
         savedTheme: 'Theme saved.',
         switchedTheme: 'Theme switched.',
@@ -919,6 +930,8 @@ assets control the header icon and background image; the input-bar and capture b
         themeNameEmpty: 'Theme name cannot be empty.',
         saveAction: 'Save',
         saveAsAction: 'Save as',
+        currentTavernTheme: 'Current Tavern theme',
+        mergedThemeName: 'Merged Tavern theme - {name}',
         confirmDeleteNote: 'Delete this note?\n\n{preview}{ellipsis}',
         pasteFontFirst: 'Paste a font URL or @import code first.',
         importedFont: 'Imported font: {name}',
@@ -954,7 +967,7 @@ assets control the header icon and background image; the input-bar and capture b
         liteFullInfoTitle: 'Lite와 Full 버전',
         liteFullJsonCompatibility: 'Lite에서 내보낸 JSON 노트는 Full로 바로 가져올 수 있으며, Full의 JSON도 Lite로 가져올 수 있습니다.',
         liteLimitations: 'Lite는 서버 플러그인 없이 현재 브라우저에만 노트를 저장합니다. 브라우저나 기기 간 자동 공유는 되지 않으며, 사이트 데이터를 지우면 노트가 삭제될 수 있으니 JSON을 정기적으로 백업하세요.',
-        fullAdvantages: 'Full은 서버 플러그인이 필요하지만 로컬 파일 저장, 매일 자동 백업, 여러 기기에서 같은 데이터 사용, 전체 테마 제작 및 술집 테마 병합 기능을 제공합니다.',
+        fullAdvantages: 'Full은 서버 플러그인이 필요하며 로컬 파일 저장, 매일 자동 백업, 여러 기기에서 같은 데이터 사용을 제공합니다.',
         importDone: '가져오기 완료: {imported}개 추가, 중복 또는 빈 노트 {skipped}개 건너뜀.',
         invalidBackup: '가져올 수 없습니다. Tavern Notes에서 내보낸 JSON 백업을 선택하세요.',
         noPageNotesToExport: '현재 페이지에 내보낼 노트가 없습니다.',
@@ -964,6 +977,7 @@ assets control the header icon and background image; the input-bar and capture b
         themeFiles: '테마 파일',
         currentTheme: '현재: {name}',
         themeName: '테마 이름',
+        mergeTheme: '현재 술집 테마 병합',
         themeGuide: '테마 제작 설명',
         preview: '미리보기',
         save: '저장',
@@ -1111,7 +1125,7 @@ assets control the header icon and background image; the input-bar and capture b
         deleteTheme: '테마 삭제',
         previewTheme: '미리보기: {name}',
         unnamedTheme: '이름 없는 테마',
-        previewSave: '미리보기 후 저장',
+        previewSave: '적용 및 저장',
         themeCalendar: '캘린더',
         themeJianshu: '젠슈',
         themeDialogue: '대화',
@@ -1124,6 +1138,7 @@ assets는 제목 아이콘과 배경 이미지를 제어합니다. 입력창과 
 `,
         invalidThemeFile: '술집 노트 테마 파일이 아닙니다.',
         previewedTheme: '테마를 미리보았습니다. 아직 저장되지 않았습니다.',
+        mergedThemeDraft: '병합 테마 초안을 만들었습니다. 현재 테마는 변경되지 않았습니다. 적용 및 저장을 눌러 테마를 전환하세요.',
         savedAsTheme: '새 테마로 저장했습니다.',
         savedTheme: '테마를 저장했습니다.',
         switchedTheme: '테마를 전환했습니다.',
@@ -1136,6 +1151,8 @@ assets는 제목 아이콘과 배경 이미지를 제어합니다. 입력창과 
         themeNameEmpty: '테마 이름은 비워둘 수 없습니다.',
         saveAction: '저장',
         saveAsAction: '다른 이름으로 저장',
+        currentTavernTheme: '현재 술집 테마',
+        mergedThemeName: '병합한 술집 테마 - {name}',
         confirmDeleteNote: '이 노트를 삭제할까요?\n\n{preview}{ellipsis}',
         pasteFontFirst: '먼저 글꼴 주소나 @import 코드를 붙여 넣으세요.',
         importedFont: '글꼴을 가져왔습니다: {name}',
@@ -1466,19 +1483,6 @@ function getLiteBuiltInThemes() {
     });
 }
 
-const RETIRED_SECRET_FILES_THEME_IDS = new Set(['secret-files', 'archive']);
-
-function isRetiredSecretFilesTheme(record) {
-    const id = String(record?.id || record?.theme?.id || '').trim().toLowerCase();
-    const name = String(record?.name || record?.theme?.name || '').trim();
-    const variables = record?.theme?.variables || {};
-    const flavor = String(variables['--tnl-theme-flavor'] || variables['--tn-theme-flavor'] || '').trim().toLowerCase();
-    return RETIRED_SECRET_FILES_THEME_IDS.has(id)
-        || flavor === 'archive'
-        || /secret\s*files?/i.test(name)
-        || /秘密档案|秘密檔案/.test(name);
-}
-
 const liteThemeApi = createLocalThemeRepository({
     storage: localStorage,
     themeStorageKey: THEME_STORAGE_KEY,
@@ -1487,7 +1491,7 @@ const liteThemeApi = createLocalThemeRepository({
     getBuiltInThemes: getLiteBuiltInThemes,
     normalizeTheme: themeModel.normalizeTheme,
     normalizeThemeId: themeModel.normalizeAppleThemeId,
-    isRetiredTheme: isRetiredSecretFilesTheme,
+    isRetiredTheme: isRetiredLegacyTheme,
     translate: t,
 });
 
@@ -1677,10 +1681,10 @@ const noteFilterView = createNoteFilterView({
     root: () => document.querySelector('#tavern-notes-lite-panel'),
     selectors: {
         search: '#tavern-notes-lite-search',
-        type: '.tnl-filter',
+        type: '.tn-filter',
         character: '.__note-view-never',
         chat: '.__note-view-never',
-        tag: '.tnl-tag-filter[data-tag]',
+        tag: '.tn-tag-filter[data-tag]',
         sort: '.__note-view-never',
         reset: '.__note-view-never',
     },
@@ -1724,8 +1728,8 @@ const noteEditorView = createNoteEditorView({
         form: '#tavern-notes-lite-edit-menu form',
         content: '#tavern-notes-lite-edit-content',
         tags: '#tavern-notes-lite-edit-tags',
-        submit: '.tnl-edit-save',
-        close: '.tnl-edit-close',
+        submit: '.tn-edit-save',
+        close: '.tn-edit-close',
     },
     parseTags: parseTagsInput,
     getTags: () => {
@@ -1762,8 +1766,8 @@ const newNoteView = createNoteEditorView({
         form: '#tavern-notes-lite-new-note-menu form',
         content: '#tavern-notes-lite-new-note-content',
         tags: '#tavern-notes-lite-new-note-tags',
-        submit: '.tnl-new-note-save',
-        close: '.tnl-new-note-close',
+        submit: '.tn-new-note-save',
+        close: '.tn-new-note-close',
     },
     parseTags: parseTagsInput,
     getInitialTags: () => t('inspirationTag'),
@@ -1789,8 +1793,8 @@ const newNoteView = createNoteEditorView({
 const noteTransferView = createNoteImportExportView({
     root: () => document.querySelector('#tavern-notes-lite-panel'),
     selectors: {
-        scope: '#tavern-notes-lite-export-menu .tnl-export-scope-choice',
-        exportChoice: '#tavern-notes-lite-export-menu .tnl-export-choice[data-format]',
+        scope: '#tavern-notes-lite-export-menu .tn-export-scope-choice',
+        exportChoice: '#tavern-notes-lite-export-menu .tn-export-choice[data-format]',
         importButton: '#tavern-notes-lite-import-json',
         fileInput: '#tavern-notes-lite-import-json-file',
     },
@@ -1827,7 +1831,8 @@ const tagView = createTagView({
     onSort: sort => { state.tagManagerSort = sort; },
 });
 const captureView = createCaptureView({
-    selectors: { selectionButton: '#tavern-notes-lite-selection-capture', selectionClass: 'tnl-selection-capture', floorButton: '.tnl-floor-capture', chat: '#chat', messages: '.mes[mesid], .mes[data-mesid]', message: '.mes[mesid], .mes[data-mesid]' },
+    classPrefix: 'tnl',
+    selectors: { selectionButton: '#tavern-notes-lite-selection-capture', selectionClass: 'tnl-selection-capture', floorButton: '.tn-floor-capture', chat: '#chat', messages: '.mes[mesid], .mes[data-mesid]', message: '.mes[mesid], .mes[data-mesid]' },
     translate: t,
     escapeHtml: htmlEscape,
     isSelectionEnabled: () => state.showSelectionCaptureButton,
@@ -1838,7 +1843,7 @@ const captureView = createCaptureView({
 });
 const userInputMaintenanceView = createUserInputMaintenanceView({
     root: () => document.querySelector('#tavern-notes-lite-panel'),
-    selectors: { menu: '#tavern-notes-lite-user-input-cleanup-menu', preview: '#tavern-notes-lite-input-dedupe-preview', summary: '.tnl-dedupe-preview-summary', list: '.tnl-dedupe-preview-list', itemClass: 'tnl-dedupe-preview-item', scan: '#tavern-notes-lite-input-dedupe-scan', apply: '#tavern-notes-lite-input-dedupe-confirm', cancel: '#tavern-notes-lite-input-dedupe-cancel' },
+    selectors: { menu: '#tavern-notes-lite-user-input-cleanup-menu', preview: '#tavern-notes-lite-input-dedupe-preview', summary: '.tn-dedupe-preview-summary', list: '.tn-dedupe-preview-list', itemClass: 'tnl-dedupe-preview-item', scan: '#tavern-notes-lite-input-dedupe-scan', apply: '#tavern-notes-lite-input-dedupe-confirm', cancel: '#tavern-notes-lite-input-dedupe-cancel' },
     controller: userInputMaintenanceController,
     translate: t,
     escapeHtml: htmlEscape,
@@ -1867,7 +1872,7 @@ const themeView = createThemeView({
     iconConfig: {
         defaultIconClass: 'tavern-notes-lite-default-icon',
         lightIconClass: 'tavern-notes-lite-default-icon-light',
-        brandIconSelector: '.tnl-brand-mark',
+        brandIconSelector: '.tn-brand-mark',
         useThemeBrandIcon: false,
         openSelector: '#tavern-notes-lite-open',
         captureSelector: '#tavern-notes-lite-capture',
@@ -1901,6 +1906,22 @@ const themeController = createThemeController({
     confirm: message => window.confirm(message),
     beforeOpen: closeHeaderPopovers,
 });
+
+const themeStudio = createThemeStudio({
+    document,
+    window,
+    getComputedStyle: element => getComputedStyle(element),
+    defaultTheme: {
+        ...DEFAULT_THEME,
+        variables: toFullThemeVariables(DEFAULT_THEME.variables),
+    },
+    normalizeTheme: themeModel.normalizeTheme,
+    themeController,
+    translate: t,
+    notify,
+    idPrefix: 'tavern-notes-lite',
+});
+themeController.attachStudio(themeStudio);
 
 const fontRepository = createLiteFontRepository({
     getDatabaseName: () => FONT_DB_NAME,
@@ -2259,7 +2280,7 @@ async function saveFloorCaptureSelector(value, silent = false) {
     if (!result.ok) return;
     updateFloorCaptureSelectorInput();
     captureView.refreshFloorButtons();
-    document.querySelector('.tnl-floor-capture-advanced')?.removeAttribute('open');
+    document.querySelector('.tn-floor-capture-advanced')?.removeAttribute('open');
     if (!silent) notify(t('floorCaptureSelectorSaved'), 'success');
 }
 
@@ -2495,7 +2516,7 @@ function getActiveVariant(note) {
 }
 
 function findNoteGroupFromElement(element) {
-    const article = element.closest('.tnl-note');
+    const article = element.closest('.tn-note');
     const id = article?.dataset.noteId;
     return state.notes.find(note => note.id === id);
 }
@@ -2523,7 +2544,7 @@ function writeInput(text, append = false) {
 function getUserNoteCharacter() { return { id: 'tavern-notes-user', name: getShareCardUserName(), avatar: user_avatar || null, isUser: true }; }
 function layoutHeaderActions() {
     const panel = document.querySelector('#tavern-notes-lite-panel');
-    const actions = panel?.querySelector('.tnl-header-actions');
+    const actions = panel?.querySelector('.tn-header-actions');
     const moreButton = document.querySelector('#tavern-notes-lite-more-open');
     const moreMenu = document.querySelector('#tavern-notes-lite-more-menu');
     if (!panel || !actions || !moreButton || !moreMenu) return;
@@ -2564,11 +2585,11 @@ function observeHeaderActionLayout() {
     headerLayoutObserverController.mount();
 }
 
-function closeHeaderPopovers() { document.querySelectorAll('.tnl-header-popover.open').forEach(menu => menu.classList.remove('open')); }
+function closeHeaderPopovers() { document.querySelectorAll('.tn-header-popover.open').forEach(menu => menu.classList.remove('open')); }
 function closeHeaderPopoverFromOutside(event) {
-    const openPopover = document.querySelector('.tnl-header-popover.open');
+    const openPopover = document.querySelector('.tn-header-popover.open');
     if (!openPopover) return;
-    if (event.target.closest?.('#tavern-notes-lite-more-open, .tnl-header-popover')) return;
+    if (event.target.closest?.('#tavern-notes-lite-more-open, .tn-header-popover')) return;
     closeHeaderPopovers();
 }
 function toggleHeaderPopover(id) {
@@ -2622,9 +2643,10 @@ function getMessageCharacterForCapture(messageId) {
 function setActiveFilter(filter) {
     state.filter = filter;
     if (filter === 'characters') state.characterFilter = null;
-    document.querySelectorAll('.tnl-filter').forEach(tab => {
+    document.querySelectorAll('.tn-filter').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.filter === filter);
     });
+    noteListRenderer.render();
     noteFilterController.setType(filter === 'characters' ? 'all' : filter);
 }
 
@@ -2638,7 +2660,7 @@ function setCharacterFilter(character) {
         userInput: Number(character.userInput || 0),
         excerpt: Number(character.excerpt || 0),
     };
-    document.querySelectorAll('.tnl-filter').forEach(tab => {
+    document.querySelectorAll('.tn-filter').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.filter === 'all');
     });
     noteFilterController.setCharacter(state.characterFilter.id);
@@ -2647,7 +2669,7 @@ function setCharacterFilter(character) {
 function clearCharacterFilter() {
     state.characterFilter = null;
     state.filter = 'characters';
-    document.querySelectorAll('.tnl-filter').forEach(tab => {
+    document.querySelectorAll('.tn-filter').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.filter === 'characters');
     });
     noteFilterController.setCharacter(null);
@@ -2665,6 +2687,7 @@ function buildPanel() {
         getFloorCaptureTagName,
         extensionVersion: EXTENSION_VERSION,
         renderThemeViewMarkup,
+        renderThemeStudioMarkup,
         themeCapabilities: THEME_CAPABILITIES,
         shareCardThemes: SHARE_CARD_THEMES,
         shareCardBackgrounds: SHARE_CARD_BACKGROUNDS,
@@ -2726,10 +2749,10 @@ function bindEvents() {
     document.querySelector('#tavern-notes-lite-launcher-mode')?.addEventListener('click', () => quickReplyController.toggle());
     document.querySelector('#tavern-notes-lite-auto-user-input')?.addEventListener('click', toggleAutoCaptureUserInput);
     document.querySelector('#tavern-notes-lite-user-input-cleanup-open')?.addEventListener('click', openUserInputCleanupMenu);
-    document.querySelector('.tnl-user-input-cleanup-close')?.addEventListener('click', closeUserInputCleanupMenu);
+    document.querySelector('.tn-user-input-cleanup-close')?.addEventListener('click', closeUserInputCleanupMenu);
     document.querySelector('#tavern-notes-lite-input-rules-save')?.addEventListener('click', saveUserInputCleanupSettings);
     document.querySelector('#tavern-notes-lite-input-rule-search')?.addEventListener('input', renderInputRuleLists);
-    document.querySelector('.tnl-user-input-cleanup-card')?.addEventListener('click', event => {
+    document.querySelector('.tn-user-input-cleanup-card')?.addEventListener('click', event => {
         const add = event.target.closest?.('[data-rule-add]');
         if (add) return addInputRules(add.dataset.ruleAdd);
         const remove = event.target.closest?.('[data-rule-delete]');
@@ -2738,8 +2761,8 @@ function bindEvents() {
     document.querySelector('#tavern-notes-lite-selection-capture-setting')?.addEventListener('click', toggleSelectionCaptureButtonSetting);
     document.querySelector('#tavern-notes-lite-floor-capture-open')?.addEventListener('click', openFloorCaptureMenu);
     document.querySelector('#tavern-notes-lite-floor-capture-setting')?.addEventListener('click', toggleFloorCaptureButtonSetting);
-    document.querySelector('.tnl-floor-capture-close')?.addEventListener('click', closeFloorCaptureMenu);
-    document.querySelector('.tnl-close')?.addEventListener('click', closePanel);
+    document.querySelector('.tn-floor-capture-close')?.addEventListener('click', closeFloorCaptureMenu);
+    document.querySelector('.tn-close')?.addEventListener('click', closePanel);
     document.querySelector('#tavern-notes-lite-export')?.addEventListener('click', toggleExportMenu);
     document.querySelector('#tavern-notes-lite-floor-capture-selector-save')?.addEventListener('click', () => saveFloorCaptureSelector(document.querySelector('#tavern-notes-lite-floor-capture-selector')?.value));
     document.querySelector('#tavern-notes-lite-floor-capture-selector')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); saveFloorCaptureSelector(event.target.value); } });
@@ -2747,7 +2770,7 @@ function bindEvents() {
     document.querySelector('#tavern-notes-lite-floor-exclude-input')?.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); addFloorCaptureExcludedTags(); } });
     document.querySelector('#tavern-notes-lite-floor-exclude-tags')?.addEventListener('click', event => { const button = event.target.closest?.('[data-floor-exclude-remove]'); if (button) removeFloorCaptureExcludedTag(button.dataset.floorExcludeRemove || ''); });
     document.querySelector('#tavern-notes-lite-list')?.addEventListener('keydown', event => {
-        if (!['Enter', ' '].includes(event.key) || !event.target.matches?.('.tnl-note')) return;
+        if (!['Enter', ' '].includes(event.key) || !event.target.matches?.('.tn-note')) return;
         event.preventDefault();
         const note = findNoteFromButton(event.target);
         if (note) openFullNote(note);
@@ -2829,10 +2852,10 @@ function closeShareCard() {
 
 function syncShareCardControls() {
     const settings = state.shareCardSettings;
-    document.querySelectorAll('.tnl-share-choice').forEach(button => {
+    document.querySelectorAll('.tn-share-choice').forEach(button => {
         button.classList.toggle('active', button.dataset.shareTheme === settings.theme);
     });
-    document.querySelectorAll('.tnl-share-bg').forEach(button => {
+    document.querySelectorAll('.tn-share-bg').forEach(button => {
         button.classList.toggle('active', button.dataset.shareBg === settings.background);
     });
     const font = document.querySelector('#tavern-notes-lite-share-font');

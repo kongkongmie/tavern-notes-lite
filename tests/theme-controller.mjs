@@ -114,6 +114,21 @@ function createHarness(overrides = {}) {
 }
 
 {
+    let importOptions = null;
+    const harness = createHarness({
+        repository: {
+            importTheme: async (theme, options) => {
+                importOptions = options;
+                const current = harness.getState();
+                return { themes: current.themes, activeId: current.activeId, activeTheme: current.theme };
+            },
+        },
+    });
+    await harness.controller.saveTheme({ name: 'Draft', variables: {}, assets: {} }, { activate: false });
+    assert.equal(importOptions.activate, false, 'draft saves must not activate the theme');
+}
+
+{
     const harness = createHarness({ capabilities: { exportTheme: false, openThemeFolder: false, themeStudio: false } });
     harness.controller.exportTheme();
     await harness.controller.openThemeFolder();

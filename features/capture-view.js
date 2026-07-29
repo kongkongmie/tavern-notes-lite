@@ -71,6 +71,7 @@ export function createCaptureView({
     documentRef = document,
     windowRef = window,
     selectors,
+    classPrefix = 'tn',
     translate,
     escapeHtml,
     isSelectionEnabled,
@@ -144,7 +145,7 @@ export function createCaptureView({
         if (!isFloorEnabled() || message.querySelector(`:scope > ${selectors.floorButton}`)) return;
         const button = documentRef.createElement('button');
         button.type = 'button';
-        button.className = selectors.floorButton.replace(/^\./, '');
+        button.className = uiClass('floor-capture', { classPrefix });
         button.title = translate('captureFloorTitle');
         button.innerHTML = `<i class="fa-solid fa-file-lines"></i><span>${escapeHtml(translate('captureFloor'))}</span>`;
         button.addEventListener('click', event => {
@@ -200,3 +201,4 @@ export function createCaptureView({
 
     return { mount, destroy, refreshFloorButtons, hideSelectionButton };
 }
+import { uiClass } from '../core/ui-class-names.js';

@@ -1,3 +1,5 @@
+import { uiClass } from '../core/ui-class-names.js';
+
 export function createTagView({
     root,
     selectors,
@@ -13,6 +15,7 @@ export function createTagView({
 }) {
     let mounted = false;
     let abortController = null;
+    const ui = name => uiClass(name, { classPrefix: selectors.prefix });
 
     function elements() {
         const host = typeof root === 'function' ? root() : root;
@@ -42,7 +45,7 @@ export function createTagView({
         if (!shelf) return;
         const state = getState();
         shelf.classList.remove('tn-hidden');
-        shelf.innerHTML = `<button class="${selectors.prefix}-tag-filter ${selectors.prefix}-tag-library-open" type="button"><i class="fa-solid fa-tags"></i><span>${escapeHtml(translate('allTags'))}</span><small>${state.tags.length}</small></button>${state.activeTag ? `<button class="${selectors.prefix}-tag-filter ${selectors.prefix}-tag-clear active" type="button" data-tag=""><i class="fa-solid fa-xmark"></i><span>${escapeHtml(translate('clearTagFilter'))}</span></button>` : ''}${homeTags(state).map(tag => `<button class="${selectors.prefix}-tag-filter ${state.activeTag === tag.name ? 'active' : ''}" type="button" data-tag="${escapeHtml(tag.name)}"><span>${escapeHtml(tag.name)}</span><small>${tag.count}</small></button>`).join('')}${!state.tags.length ? `<div class="${selectors.prefix}-tag-shelf-empty"><i class="fa-solid fa-pen-to-square"></i><span>${escapeHtml(translate('tagShelfEmpty'))}</span></div>` : ''}`;
+        shelf.innerHTML = `<button class="${ui('tag-filter')} ${selectors.prefix}-tag-library-open" type="button"><i class="fa-solid fa-tags"></i><span>${escapeHtml(translate('allTags'))}</span><small>${state.tags.length}</small></button>${state.activeTag ? `<button class="${ui('tag-filter')} ${selectors.prefix}-tag-clear active" type="button" data-tag=""><i class="fa-solid fa-xmark"></i><span>${escapeHtml(translate('clearTagFilter'))}</span></button>` : ''}${homeTags(state).map(tag => `<button class="${ui('tag-filter')} ${state.activeTag === tag.name ? 'active' : ''}" type="button" data-tag="${escapeHtml(tag.name)}"><span>${escapeHtml(tag.name)}</span><small>${tag.count}</small></button>`).join('')}${!state.tags.length ? `<div class="${selectors.prefix}-tag-shelf-empty"><i class="fa-solid fa-pen-to-square"></i><span>${escapeHtml(translate('tagShelfEmpty'))}</span></div>` : ''}`;
     }
 
     function renderLibrary() {

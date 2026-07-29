@@ -1,3 +1,5 @@
+import { uiClass } from './ui-class-names.js';
+
 export function renderNoteCards(notes, options) {
     const {
         classPrefix,
@@ -30,7 +32,7 @@ export function renderNoteCards(notes, options) {
         `;
 
         return `
-            <article class="${c('note')} ${c(`note-${escapeHtml(noteTypeClass(note.type))}`)}${variants.length > 1 ? ` ${c('note-has-variants')}` : ''}" data-note-id="${escapeHtml(note.id)}" data-chat-name="${escapeHtml(chatName)}" tabindex="0" aria-label="${escapeHtml(translate('viewFull'))}">
+            <article class="${uiClass('note', { classPrefix })} ${c(`note-${escapeHtml(noteTypeClass(note.type))}`)}${variants.length > 1 ? ` ${c('note-has-variants')}` : ''}" data-note-id="${escapeHtml(note.id)}" data-chat-name="${escapeHtml(chatName)}" tabindex="0" aria-label="${escapeHtml(translate('viewFull'))}">
                 ${variantControls}
                 <div class="${c('note-topline')}">
                     <span class="${c('note-type')}">${escapeHtml(noteTypeLabel(note.type))}</span>
@@ -64,7 +66,7 @@ export function closeNoteActionMenus(root, classPrefix) {
     root?.querySelectorAll(`.${classPrefix}-note-actions.open`).forEach(menu => {
         menu.classList.remove('open');
         menu.setAttribute('aria-hidden', 'true');
-        menu.closest(`.${classPrefix}-note`)
+        menu.closest('.tn-note')
             ?.querySelector(`.${classPrefix}-note-menu-toggle`)
             ?.setAttribute('aria-expanded', 'false');
     });

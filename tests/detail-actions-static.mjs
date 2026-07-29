@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const source = [
     fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8'),
     fs.readFileSync(new URL('../repositories/lite-app-shell-markup.js', import.meta.url), 'utf8'),
+    fs.readFileSync(new URL('../features/app-shell-markup.js', import.meta.url), 'utf8'),
 ].join('\n');
 const controller = fs.readFileSync(new URL('../features/note-detail-controller.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../style.css', import.meta.url), 'utf8');

@@ -23,9 +23,10 @@ assert.deepEqual(info.annotations[0], { version: '1.0.24', items: ['作者补充
 const source = [
     fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8'),
     fs.readFileSync(new URL('../repositories/lite-app-shell-markup.js', import.meta.url), 'utf8'),
+    fs.readFileSync(new URL('../features/app-shell-markup.js', import.meta.url), 'utf8'),
 ].join('\n');
 const view = fs.readFileSync(new URL('../features/update-view.js', import.meta.url), 'utf8');
-assert.match(source, /id="tavern-notes-lite-update-indicator"[^>]*tnl-hidden/);
+assert.match(source, /id="\$\{idPrefix\}-update-indicator"[^>]*\$\{ui\('hidden'\)\}/);
 assert.match(view, /indicator\?\.classList\.toggle\(`\$\{classPrefix\}-hidden`, !hasUpdate\)/);
 assert.doesNotMatch(source, /tavern-notes-lite-update-banner/);
 console.log('Shared update center test passed.');

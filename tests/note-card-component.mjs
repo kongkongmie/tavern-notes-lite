@@ -39,4 +39,17 @@ assert.doesNotMatch(html, /class="menu_button tn-fill"/);
 assert.doesNotMatch(html, />Synthetic Chat</);
 assert.doesNotMatch(html, />#5</);
 assert.match(html, /<span>×2<\/span>/);
+const liteHtml = renderNoteCards(notes, {
+    classPrefix: 'tnl',
+    escapeHtml,
+    translate: (key, values = {}) => key === 'repeatedTimes' ? `repeat-${values.count}` : key,
+    noteTypeClass: () => 'user-input',
+    noteTypeLabel: () => 'User',
+    renderQuotedText: escapeHtml,
+    renderTags: () => '<div class="tnl-note-tags"></div>',
+    getVariants: note => [note],
+    getVariantIndex: () => 0,
+    getActiveVariant: note => note,
+});
+assert.match(liteHtml, /class="tn-note tnl-note tnl-note-user-input"/);
 console.log('Shared note-card component test passed.');

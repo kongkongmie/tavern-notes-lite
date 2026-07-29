@@ -27,8 +27,8 @@ export function createShareCardView({
             if (!menu) return;
             bind(menu, 'click', event => {
                 if (event.target === menu || event.target.closest?.(`.${classPrefix}-share-close`)) emit('close');
-                const theme = event.target.closest?.(`.${classPrefix}-share-choice`);
-                const background = event.target.closest?.(`.${classPrefix}-share-bg`);
+                const theme = event.target.closest?.('.tn-share-choice');
+                const background = event.target.closest?.('.tn-share-bg');
                 if (theme) emit('settings', { theme: theme.dataset.shareTheme || 'calendar' });
                 if (background) emit('settings', { background: background.dataset.shareBg || '#f7f4ef' });
             });
@@ -60,8 +60,8 @@ export function createShareCardView({
         },
         sync() {
             const settings = getSettings();
-            menu?.querySelectorAll(`.${classPrefix}-share-choice`).forEach(button => button.classList.toggle('active', button.dataset.shareTheme === settings.theme));
-            menu?.querySelectorAll(`.${classPrefix}-share-bg`).forEach(button => button.classList.toggle('active', button.dataset.shareBg === settings.background));
+            menu?.querySelectorAll('.tn-share-choice').forEach(button => button.classList.toggle('active', button.dataset.shareTheme === settings.theme));
+            menu?.querySelectorAll('.tn-share-bg').forEach(button => button.classList.toggle('active', button.dataset.shareBg === settings.background));
             const set = (selector, key, value) => { const node = menu?.querySelector(selector); if (node) node[key] = value; };
             set(`#${idPrefix}-share-font`, 'value', settings.fontFamily || '');
             renderSavedFonts(menu?.querySelector(`#${idPrefix}-share-saved-fonts`) || null, settings);

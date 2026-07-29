@@ -10,9 +10,13 @@ export function renderThemeViewMarkup({
 }) {
     const t = translate;
     const escape = escapeHtml;
-    const fullActions = capabilities.themeStudio
+    const exportAction = capabilities.exportTheme
         ? `
             <button id="${idPrefix}-theme-export" class="${classPrefix}-theme-icon-button ${classPrefix}-theme-studio-action" title="${escape(t('exportCurrentTheme'))}" aria-label="${escape(t('exportCurrentTheme'))}"><i class="fa-solid fa-file-export"></i></button>
+        `
+        : '';
+    const folderAction = capabilities.openThemeFolder
+        ? `
             <button id="${idPrefix}-theme-open-folder" class="${classPrefix}-theme-icon-button ${classPrefix}-theme-studio-action" title="${escape(t('openThemeFolder'))}" aria-label="${escape(t('openThemeFolder'))}"><i class="fa-solid fa-folder-open"></i></button>
         `
         : '';
@@ -25,7 +29,8 @@ export function renderThemeViewMarkup({
                 <div class="${classPrefix}-theme-picker">
                     <select id="${idPrefix}-theme-select" data-theme-action="select" title="${escape(t('switchTheme'))}"></select>
                     <button id="${idPrefix}-theme-import" data-theme-action="import" class="${classPrefix}-theme-icon-button" title="${escape(t('importTheme'))}" aria-label="${escape(t('importTheme'))}"><i class="fa-solid fa-file-import"></i></button>
-                    ${fullActions}
+                    ${exportAction}
+                    ${folderAction}
                     <button id="${idPrefix}-theme-delete" data-theme-action="delete" class="${classPrefix}-theme-icon-button" title="${escape(t('deleteTheme'))}" aria-label="${escape(t('deleteTheme'))}"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
                 ${studioMarkup}

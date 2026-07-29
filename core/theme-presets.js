@@ -15,13 +15,10 @@ export function createAppleGlassSharedVariables(prefix = '--tn-') {
         [variable('inline-icon-shadow')]: `0 0 0 1px var(${variable('line')})`,
         [variable('note-bg')]: `var(${variable('card-image')}), var(${variable('card-bg')})`,
         [variable('note-shadow')]: `0 18px 46px var(${variable('shadow-dark')})`,
-        [variable('note-padding')]: '18px 20px',
         [variable('note-topline-bg')]: 'transparent',
         [variable('note-topline-border')]: '0',
         [variable('note-topline-padding')]: '0',
         [variable('note-topline-radius')]: '0',
-        [variable('note-topline-margin')]: '0 0 12px',
-        [variable('note-dot-display')]: 'none',
         [variable('filter-shadow')]: `0 12px 32px var(${variable('shadow-dark')})`,
         [variable('control-shadow')]: `0 10px 28px var(${variable('shadow-dark')}), inset 0 1px 0 rgba(255, 255, 255, 0.16)`,
     };
@@ -57,4 +54,16 @@ export function createBuiltInThemeRecords({
         { id: 'default', name: defaultPreset.name, author, builtIn: true, theme: defaultPreset },
         { id: appleThemeId, name: applePreset.name, author, builtIn: true, theme: applePreset },
     ];
+}
+
+export function isRetiredLegacyTheme(record) {
+    const retiredIds = new Set(['secret-files', 'archive']);
+    const id = String(record?.id || record?.theme?.id || '').trim().toLowerCase();
+    const name = String(record?.name || record?.theme?.name || '').trim();
+    const variables = record?.theme?.variables || {};
+    const flavor = String(variables['--tn-theme-flavor'] || variables['--tnl-theme-flavor'] || '').trim().toLowerCase();
+    return retiredIds.has(id)
+        || flavor === 'archive'
+        || /secret\s*files?/i.test(name)
+        || /秘密档案|秘密檔案/.test(name);
 }

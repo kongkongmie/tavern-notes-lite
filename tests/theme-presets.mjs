@@ -20,7 +20,10 @@ assert.deepEqual(records.map(record => record.id), ['default', 'apple-glass']);
 assert.equal(records[1].theme.variables['--tn-theme-flavor'], 'apple');
 assert.equal(records[1].theme.variables['--tn-radius-panel'], '26px');
 assert.equal(records[1].theme.variables['--tn-paper'], '#f5f5f7');
-assert.equal(createAppleGlassSharedVariables('--tnl-')['--tnl-note-dot-display'], 'none');
+const appleSharedVariables = createAppleGlassSharedVariables('--tnl-');
+assert.equal(appleSharedVariables['--tnl-note-padding'], undefined, 'themes must not change note geometry');
+assert.equal(appleSharedVariables['--tnl-note-topline-margin'], undefined, 'themes must not change note header alignment');
+assert.equal(appleSharedVariables['--tnl-note-dot-display'], undefined, 'themes must not change note dot visibility');
 assert.equal(defaultTheme.variables['--tn-radius-panel'], undefined, 'preset creation must not mutate its input');
 
 console.log('Shared theme presets test passed.');
