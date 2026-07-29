@@ -1625,6 +1625,7 @@
     border: var(--tnl-note-topline-border);
     border-radius: var(--tnl-note-topline-radius);
     background: var(--tnl-note-topline-bg);
+    margin-right: 46px;
 }
 
 .tnl-note-type {
@@ -1761,26 +1762,25 @@
     z-index: 4;
     transform: translateY(-50%);
     display: grid;
-    gap: 4px;
-    padding: 4px;
-    border: 1px solid color-mix(in srgb, var(--tnl-line) 72%, transparent);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--tnl-paper-2) 76%, transparent);
-    box-shadow: 0 5px 14px color-mix(in srgb, var(--tnl-shadow-dark) 16%, transparent);
-    backdrop-filter: blur(10px);
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
 .tnl-note-menu-toggle,
 .tnl-note-quick-fill {
-    width: 28px;
-    height: 28px;
-    border: 0;
+    width: 30px;
+    height: 30px;
+    border: 1px solid color-mix(in srgb, var(--tnl-line) 72%, transparent);
     border-radius: 999px;
     display: grid;
     place-items: center;
     color: var(--tnl-note-type-color);
-    background: transparent;
-    box-shadow: none;
+    background: color-mix(in srgb, var(--tnl-paper-2) 82%, transparent);
+    box-shadow: 0 3px 9px color-mix(in srgb, var(--tnl-shadow-dark) 13%, transparent);
     cursor: pointer;
 }
 
