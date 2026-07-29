@@ -2663,6 +2663,7 @@ function setCharacterFilter(character) {
     document.querySelectorAll('.tn-filter').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.filter === 'all');
     });
+    noteListRenderer.render();
     noteFilterController.setCharacter(state.characterFilter.id);
 }
 
@@ -2672,6 +2673,7 @@ function clearCharacterFilter() {
     document.querySelectorAll('.tn-filter').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.filter === 'characters');
     });
+    noteListRenderer.render();
     noteFilterController.setCharacter(null);
 }
 

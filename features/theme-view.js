@@ -91,7 +91,7 @@ export function createThemeView({
             ? themeState.appleMode === 'night'
             : themeState.defaultMode === 'night';
         button.classList.toggle(`${classPrefix}-hidden`, !supported);
-        button.classList.toggle('active', supported && isNight);
+        button.classList.remove('active');
         const title = t(isApple ? 'appleThemeModeTitle' : 'defaultThemeModeTitle');
         button.title = title;
         button.setAttribute('aria-label', title);
