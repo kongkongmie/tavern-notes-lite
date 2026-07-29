@@ -81,22 +81,34 @@ export function createThemeStudio({
         return usefulColor(styles?.getPropertyValue(name)?.trim());
     }
 
-    function parseRgb(value) {
+    function parseColor(value) {
         const text = String(value || '').trim();
         const rgb = text.match(/rgba?\(([^)]+)\)/i);
         if (rgb) {
-            const parts = rgb[1].split(',').map(part => Number.parseFloat(part));
-            if (parts.length >= 3) return parts.slice(0, 3);
+            const [channelsText, alphaText] = rgb[1].split('/').map(part => part.trim());
+            const parts = (channelsText.includes(',') ? channelsText.split(',') : channelsText.split(/\s+/))
+                .map(part => Number.parseFloat(part));
+            if (parts.length >= 3) {
+                const commaAlpha = channelsText.includes(',') && parts.length >= 4 ? parts[3] : null;
+                const alpha = Number.parseFloat(alphaText ?? commaAlpha ?? '1');
+                return { rgb: parts.slice(0, 3), alpha: Number.isFinite(alpha) ? Math.min(Math.max(alpha, 0), 1) : 1 };
+            }
         }
         const hex = text.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
         if (!hex) return null;
         const raw = hex[1].length === 3 ? hex[1].split('').map(char => char + char).join('') : hex[1];
-        return [0, 2, 4].map(index => Number.parseInt(raw.slice(index, index + 2), 16));
+        return { rgb: [0, 2, 4].map(index => Number.parseInt(raw.slice(index, index + 2), 16)), alpha: 1 };
+    }
+
+    function parseRgb(value) {
+        return parseColor(value)?.rgb || null;
     }
 
     function toOpaqueColor(value, fallback = '#111522') {
-        const rgb = parseRgb(value);
-        if (!rgb) return fallback;
+        const source = parseColor(value);
+        if (!source) return fallback;
+        const base = parseColor(fallback)?.rgb || [17, 21, 34];
+        const rgb = source.rgb.map((channel, index) => channel * source.alpha + base[index] * (1 - source.alpha));
         return `rgb(${rgb.map(channel => Math.max(0, Math.min(255, Math.round(channel)))).join(', ')})`;
     }
 
@@ -162,18 +174,20 @@ export function createThemeStudio({
         const userTint = toOpaqueColor(cssVar(root, '--SmartThemeUserMesBlurTintColor') || quote, quote);
         const chatTint = cssVar(root, '--SmartThemeChatTintColor') || cssVar(root, '--SmartThemeBlurTintColor');
         const uiBackground = cssVar(root, '--SmartThemeBlurTintColor') || cssVar(root, '--SmartThemeChatTintColor');
-        const panelBackground = uiBackground || pickBackgroundColor([menu, input, body, root], defaults['--tn-paper']);
-        const cardBackground = chatTint || uiBackground || pickBackgroundColor([chatBlock, input, menu, body], defaults['--tn-paper-2']);
-        const botTint = toOpaqueColor(cssVar(root, '--SmartThemeBotMesBlurTintColor') || cardBackground || quote, quote);
-        const panelSolid = toOpaqueColor(panelBackground, defaults['--tn-paper']);
+        const baseBackground = pickBackgroundColor([body, root], defaults['--tn-paper']);
+        const baseSolid = toOpaqueColor(baseBackground, defaults['--tn-paper']);
+        const panelBackground = pickBackgroundColor([menu, input], '') || uiBackground || baseBackground;
+        const panelSolid = toOpaqueColor(panelBackground, baseSolid);
+        const cardBackground = pickBackgroundColor([chatBlock], '') || chatTint || uiBackground || panelBackground;
         const cardSolid = toOpaqueColor(cardBackground, panelSolid);
+        const botTint = toOpaqueColor(cssVar(root, '--SmartThemeBotMesBlurTintColor') || cardBackground || quote, quote);
         const shadow = pickStyleValue([chatBlock, input, button, menu], 'box-shadow', '');
-        const isDark = isDarkColor(panelBackground) || isDarkColor(cardBackground);
+        const isDark = isDarkColor(panelSolid) || isDarkColor(cardSolid);
         const lightGlow = isDark ? colorMix(quote, 0.18) : 'rgba(255, 255, 255, 0.76)';
         const textShadow = usefulColor(cssVar(root, '--SmartThemeShadowColor')) || 'transparent';
         const themeShadow = toOpaqueColor(cssVar(root, '--SmartThemeShadowColor') || shadowColor(shadow, '#000000'), '#000000');
         const muted = `color-mix(in srgb, ${bodyText} ${isDark ? '68%' : '62%'}, ${panelSolid} ${isDark ? '32%' : '38%'})`;
-        const softBorder = `color-mix(in srgb, ${border} ${isDark ? '82%' : '52%'}, transparent)`;
+        const softBorder = `color-mix(in srgb, ${border} ${isDark ? '46%' : '38%'}, transparent)`;
         const glow = `color-mix(in srgb, ${quote} ${isDark ? '16%' : '24%'}, transparent)`;
         const darkShadow = isDark ? colorMix(themeShadow, 0.5) : shadowColor(shadow, pickStyleValue(styles, 'color', '#4c4a44'));
         const buttonBase = isDark ? `color-mix(in srgb, ${cardSolid} 88%, ${border} 12%)` : `color-mix(in srgb, ${cardSolid} 84%, white 16%)`;
@@ -209,12 +223,12 @@ export function createThemeStudio({
                 '--tn-inline-icon-hover-bg': isDark ? `linear-gradient(145deg, color-mix(in srgb, ${quote} 22%, ${darkButton} 78%), ${darkButton})` : defaults['--tn-inline-icon-hover-bg'],
                 '--tn-inline-icon-shadow': isDark ? darkIconShadow : defaults['--tn-inline-icon-shadow'],
                 '--tn-shadow-dark': darkShadow, '--tn-shadow-light': lightGlow, '--tn-radius-panel': '24px',
-                '--tn-radius-card': isDark ? '13px' : defaults['--tn-radius-card'], '--tn-panel-border': border,
+                '--tn-radius-card': isDark ? '13px' : defaults['--tn-radius-card'], '--tn-panel-border': softBorder,
                 '--tn-control-bg': `linear-gradient(145deg, ${buttonBase}, ${paperLift})`,
                 '--tn-control-bg-hover': `linear-gradient(145deg, color-mix(in srgb, ${quote} ${isDark ? '22%' : '30%'}, ${buttonBase}), ${buttonBase})`,
                 '--tn-control-inset-bg': `linear-gradient(145deg, color-mix(in srgb, ${panelSolid} ${isDark ? '90%' : '88%'}, ${isDark ? 'black' : 'white'} ${isDark ? '10%' : '12%'}), color-mix(in srgb, ${cardSolid} ${isDark ? '86%' : '88%'}, ${isDark ? 'black' : 'white'} ${isDark ? '14%' : '12%'}))`,
                 '--tn-control-inset-shadow': isDark ? `inset 0 0 0 1px color-mix(in srgb, ${border} 54%, transparent), inset 0 8px 16px ${colorMix(themeShadow, 0.36)}` : defaults['--tn-control-inset-shadow'],
-                '--tn-input-bg': cardLift, '--tn-input-color': bodyText, '--tn-input-border': border, '--tn-input-placeholder': muted,
+                '--tn-input-bg': cardLift, '--tn-input-color': bodyText, '--tn-input-border': softBorder, '--tn-input-placeholder': muted,
                 '--tn-card-bg': `linear-gradient(145deg, ${cardLift}, ${paperLift})`,
                 '--tn-card-bg-active': `linear-gradient(145deg, color-mix(in srgb, ${quote} ${isDark ? '18%' : '24%'}, ${cardLift}), ${cardLift})`,
                 '--tn-card-active-shadow': isDark ? `inset 0 0 0 1px color-mix(in srgb, ${quote} 28%, transparent), inset 0 8px 14px ${colorMix(themeShadow, 0.3)}` : defaults['--tn-card-active-shadow'],
