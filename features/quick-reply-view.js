@@ -68,6 +68,7 @@ export function createQuickReplyView({ documentRef = document, windowRef = windo
             capture.id = selectors.capture.slice(1); capture.className = classes.toolbar; capture.title = translate('captureSelectedTitle'); capture.tabIndex = 0;
             capture.innerHTML = `${renderIcon('capture', 'qr--button-icon')}<span class="qr--hidden">${translate('captureSelected')}</span>`;
             open.addEventListener('click', () => actions.open?.());
+            capture.addEventListener('mousedown', event => event.preventDefault());
             capture.addEventListener('click', () => actions.capture?.());
             open.addEventListener('keydown', event => {
                 if (event.key === 'Enter' || event.key === ' ') actions.open?.();
@@ -88,6 +89,7 @@ export function createQuickReplyView({ documentRef = document, windowRef = windo
                 launcher.innerHTML = `<button id="${selectors.floatingOpen.slice(1)}" class="${classes.floating} ${classes.floatingMain}" type="button" title="${translate('openNotes')}" aria-label="${translate('openNotes')}">${renderIcon('open')}</button><button id="${selectors.floatingCapture.slice(1)}" class="${classes.floating} ${classes.floatingCapture}" type="button" title="${translate('captureSelectedTitle')}" aria-label="${translate('captureSelectedTitle')}">${renderIcon('capture')}</button>`;
                 container.append(launcher);
                 launcher.querySelector(selectors.floatingOpen)?.addEventListener('click', () => { if (!dragMoved) actions.open?.(); });
+                launcher.querySelector(selectors.floatingCapture)?.addEventListener('mousedown', event => event.preventDefault());
                 launcher.querySelector(selectors.floatingCapture)?.addEventListener('click', () => { if (!dragMoved) actions.capture?.(); });
                 bindDrag(launcher);
             }
