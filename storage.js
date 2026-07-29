@@ -544,17 +544,21 @@ export async function getLiteStorageInfo() {
     return { count: notes.length, approximateBytes, lastExportAt, browserUsage, browserQuota };
 }
 
-export async function liteApi(path, options = {}, user = 'default-user') {
+export async function liteApi(path, options = {}, user = 'default-user', runtimeVersion = LITE_VERSION) {
     const url = new URL(path, 'https://tavern-notes-lite.local');
     const method = String(options.method || 'GET').toUpperCase();
     if (url.pathname === '/status') {
         const notes = await readAllNotes();
-        return { ok: true, user, version: LITE_VERSION, totalNotes: notes.length, storage: 'IndexedDB' };
+        return { ok: true, user, version: runtimeVersion, totalNotes: notes.length, storage: 'IndexedDB' };
     }
     if (url.pathname === '/notes' && method === 'POST') {
         const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
         const result = await addNote(payload);
         return { ok: true, ...result };
+    }
+    if (url.pathname === '/import' && method === 'POST') {
+        const payload = typeof options.body === 'string' ? JSON.parse(options.body) : (options.body || {});
+        return { ok: true, ...await importLiteExport(payload) };
     }
     if (url.pathname === '/notes' && method === 'GET') {
         const allNotes = await readAllNotes();

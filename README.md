@@ -2,6 +2,8 @@
 
 酒馆笔记 Lite 是无需 Server Plugin 的纯前端版本。笔记保存在当前浏览器的 IndexedDB 中，适合无法安装后端、希望直接通过 SillyTavern 扩展管理器安装的用户。
 
+> 兼容说明：统一版 Tavern Notes 正在 `tavern-notes` 仓库开发，新用户以后只安装一次即可选择 Full 或 Lite。本仓库继续为已经安装独立 Lite 的用户提供原地址更新；数据库名和数据位置不会改变。
+
 ## 与完整版的区别
 
 - Lite：纯前端、本机当前浏览器保存、安装简单。

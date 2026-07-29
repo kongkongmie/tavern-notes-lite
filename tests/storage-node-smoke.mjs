@@ -18,7 +18,7 @@ const backup = {
 };
 
 const first = await storage.importLiteExport(backup);
-const duplicate = await storage.importLiteExport(backup);
+const duplicate = await storage.liteApi('/import', { method: 'POST', body: JSON.stringify(backup) });
 const updated = await storage.liteApi('/notes/full-1', {
     method: 'PATCH',
     body: JSON.stringify({ content: 'alpha excerpt edited', tags: ['Favorite', 'plot', 'favorite'] }),
@@ -59,7 +59,7 @@ const info = await storage.getLiteStorageInfo();
 
 const checks = {
     firstImport: first.imported === 3,
-    duplicateSkipped: duplicate.imported === 0 && duplicate.skipped === 3,
+    duplicateSkipped: duplicate.ok === true && duplicate.imported === 0 && duplicate.skipped === 3,
     variantsGrouped: list.totalNotes === 2 && list.notes.some(note => note.variantCount === 2),
     noteUpdated: updated.note.content === 'alpha excerpt edited' && updated.note.tags.join(',') === 'Favorite,plot',
     exactTagFilter: tagged.totalNotes === 1 && tagged.notes[0].id === 'full-1',

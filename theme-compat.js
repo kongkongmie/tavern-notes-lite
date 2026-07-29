@@ -13,3 +13,19 @@ export function toLiteThemeVariables(variables = {}) {
         return [[liteKey, liteValue]];
     }));
 }
+
+export function toFullThemeVariables(variables = {}) {
+    if (!variables || typeof variables !== 'object' || Array.isArray(variables)) return {};
+
+    return Object.fromEntries(Object.entries(variables).flatMap(([key, value]) => {
+        let fullKey = '';
+        if (key.startsWith('--tnl-')) fullKey = key.replace(/^--tnl-/, '--tn-');
+        else if (key.startsWith('--tn-')) fullKey = key;
+        else return [];
+
+        const fullValue = typeof value === 'string'
+            ? value.replace(/--tnl-/g, '--tn-')
+            : value;
+        return [[fullKey, fullValue]];
+    }));
+}
