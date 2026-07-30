@@ -161,6 +161,7 @@ export function createThemeStudio({
         const chatText = styleOf(['.mes_text', '.mes .mes_text', '#chat']);
         const input = styleOf(['#send_textarea', '#send_form textarea', '#send_form']);
         const menu = styleOf(['#user-settings-block', '#left-nav-panel', '.drawer-content', '.popup']);
+        const backdrop = styleOf(['#bg1', '#bg_custom', '#chat', '#sheld', '.drawer-content']);
         const button = styleOf(['.menu_button', '.qr--button', '#send_but']);
         const active = styleOf(['.selected', '.active', '.mes.selected', '.menu_button:hover']);
         const styles = [chatBlock, input, menu, body, root].filter(Boolean);
@@ -174,8 +175,9 @@ export function createThemeStudio({
         const userTint = toOpaqueColor(cssVar(root, '--SmartThemeUserMesBlurTintColor') || quote, quote);
         const chatTint = cssVar(root, '--SmartThemeChatTintColor') || cssVar(root, '--SmartThemeBlurTintColor');
         const uiBackground = cssVar(root, '--SmartThemeBlurTintColor') || cssVar(root, '--SmartThemeChatTintColor');
-        const baseBackground = pickBackgroundColor([body, root], defaults['--tn-paper']);
-        const baseSolid = toOpaqueColor(baseBackground, defaults['--tn-paper']);
+        const lightFallback = isDarkColor(bodyText) ? '#f5f2ec' : defaults['--tn-paper'];
+        const baseBackground = pickBackgroundColor([backdrop, chatBlock, input, menu, body, root], lightFallback);
+        const baseSolid = toOpaqueColor(baseBackground, lightFallback);
         const panelBackground = pickBackgroundColor([menu, input], '') || uiBackground || baseBackground;
         const panelSolid = toOpaqueColor(panelBackground, baseSolid);
         const cardBackground = pickBackgroundColor([chatBlock], '') || chatTint || uiBackground || panelBackground;

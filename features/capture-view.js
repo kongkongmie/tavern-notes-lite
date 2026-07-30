@@ -161,6 +161,7 @@ export function createCaptureView({
             documentRef.querySelectorAll(selectors.floorButton).forEach(button => button.remove());
             return;
         }
+        if (root?.matches?.(selectors.message)) ensureFloorButton(root);
         root.querySelectorAll?.(selectors.messages).forEach(ensureFloorButton);
     }
 
@@ -173,8 +174,8 @@ export function createCaptureView({
         documentRef.addEventListener('scroll', hideSelectionButton, { capture: true, signal: abortController.signal });
         windowRef.addEventListener('resize', hideSelectionButton, { signal: abortController.signal });
         refreshFloorButtons();
-        const chat = documentRef.querySelector(selectors.chat);
-        if (chat) {
+        const observationRoot = documentRef.querySelector(selectors.chat) || documentRef.body;
+        if (observationRoot) {
             observer = new MutationObserver(records => {
                 if (!mounted) return;
                 records.forEach(record => record.addedNodes.forEach(node => {
@@ -183,7 +184,7 @@ export function createCaptureView({
                     node.querySelectorAll?.(selectors.message).forEach(ensureFloorButton);
                 }));
             });
-            observer.observe(chat, { childList: true, subtree: true });
+            observer.observe(observationRoot, { childList: true, subtree: true });
         }
     }
 

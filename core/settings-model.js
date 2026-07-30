@@ -162,7 +162,7 @@ export function normalizeSettings(raw) {
         appleGlassMode: settings.appleGlassMode === 'night' ? 'night' : 'day',
         defaultThemeMode: settings.defaultThemeMode === 'night' ? 'night' : 'day',
         currentUserName: typeof settings.currentUserName === 'string' ? settings.currentUserName : '',
-        recentTags: uniqueStrings(settings.recentTags, 16),
+        recentTags: uniqueStrings(settings.recentTags, 100),
         shareCard: normalizeShareCard(settings.shareCard),
     };
 }

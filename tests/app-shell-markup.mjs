@@ -27,6 +27,10 @@ const html = renderLiteAppShellMarkup({
 });
 
 assert.match(html, /id="tavern-notes-lite-panel"/);
+assert.doesNotMatch(html, /soft notes · character memory/);
+assert.match(html, /id="tavern-notes-lite-notice"/);
+assert.match(html, /id="tavern-notes-lite-share-custom-background"/);
+assert.match(html, /id="tavern-notes-lite-share-custom-text-color"/);
 assert.match(html, /class="tn-header tnl-header"/);
 assert.match(html, /class="tn-brand-mark tnl-brand-mark"><img data-lite-brand>/);
 assert.doesNotMatch(html, /id="tavern-notes-lite-storage-mode"/);

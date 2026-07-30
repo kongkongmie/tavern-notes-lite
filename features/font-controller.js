@@ -49,8 +49,11 @@ export function createFontController({ repository, view, getSettings, updateSett
             if (!mounted || request !== generation) return { stale: true };
             const family = parseFontFamily(css);
             const importedFonts = family ? rememberFont(fonts(), { type: 'css', name: stripFontQuotes(family), css }) : fonts();
-            const result = await updateSettings({ fontImport: css, fontFamily: family || getSettings().fontFamily || 'system-ui', importedFonts });
+            const fontFamily = family ? quoteFontFamily(family) : (getSettings().fontFamily || 'system-ui');
+            const result = await updateSettings({ fontImport: css, fontFamily, importedFonts });
             if (result?.ok !== false) {
+                view.applyCss(css);
+                await view.waitForFont(createFontStack({ fontFamily, fontImport: css }));
                 notify(family ? 'imported' : 'imported-code', family);
                 onChanged();
             }

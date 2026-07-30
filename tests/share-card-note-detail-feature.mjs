@@ -3,9 +3,13 @@ import { createShareCardFilename, normalizeShareCardSettings } from '../core/sha
 import { createNoteDetailModel } from '../core/note-detail-model.js';
 import { createShareCardController } from '../features/share-card-controller.js';
 import { createNoteDetailController } from '../features/note-detail-controller.js';
+import { parseFontFamily, sanitizeFontCss } from '../core/font-model.js';
 
 assert.equal(normalizeShareCardSettings({ fontScale: 5 }).fontScale, 1.1);
 assert.equal(normalizeShareCardSettings({ fontScale: 0.1 }).fontScale, 0.65);
+assert.equal(parseFontFamily('@font-face { font-family: "Web Font", serif; }'), '"Web Font"');
+assert.match(sanitizeFontCss('@import url("https://example.com/font.css");'), /https:\/\/example\.com\/font\.css/);
+assert.match(sanitizeFontCss('@import url(https://example.com/font.css);'), /https:\/\/example\.com\/font\.css/);
 assert.equal(createShareCardFilename({ character: { name: 'A/B' } }, {
     brand: 'TN',
     date: new Date('2026-07-28T00:00:00Z'),

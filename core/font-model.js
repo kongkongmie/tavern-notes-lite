@@ -19,8 +19,14 @@ export function normalizeFontCss(value) {
 }
 
 export function sanitizeFontCss(value) {
-    const rules = String(value || '').replace(/\/\*[\s\S]*?\*\//g, '').match(/@font-face\s*\{[^{}]*\}/gi) || [];
-    return rules.filter(rule => !/<\/?script|javascript\s*:|expression\s*\(/i.test(rule)).join('\n');
+    const clean = String(value || '').replace(/\/\*[\s\S]*?\*\//g, '');
+    const imports = [...clean.matchAll(/@import\s+(?:url\(\s*)?(?:(['"])(https:\/\/[^'"]+)\1|(https:\/\/[^\s;)]+))\s*\)?\s*;/gi)]
+        .map(match => `@import url("${match[2] || match[3]}");`);
+    const rules = clean.match(/@font-face\s*\{[^{}]*\}/gi) || [];
+    return [...new Set([
+        ...imports,
+        ...rules.filter(rule => !/<\/?script|javascript\s*:|expression\s*\(/i.test(rule)),
+    ])].join('\n');
 }
 
 export function resolveFontCssUrls(value, stylesheetUrl) {
@@ -38,7 +44,8 @@ export function extractFontCssUrl(css) {
 }
 
 export function parseFontFamily(css) {
-    return String(css || '').match(/font-family\s*:\s*([^;}\n]+)/i)?.[1]?.trim() || '';
+    const declaration = String(css || '').match(/font-family\s*:\s*([^;}\n]+)/i)?.[1]?.trim() || '';
+    return declaration.split(',')[0]?.trim() || '';
 }
 
 export function rememberFont(fonts, entry, now = Date.now()) {

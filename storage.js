@@ -245,6 +245,9 @@ function groupNotesForDisplay(notes) {
 }
 
 function matchesCharacter(note, id, name) {
+    if (String(id || '') === 'tavern-notes-user') {
+        return note.type === 'user_input' || note.character?.isUser === true || note.character?.id === 'tavern-notes-user';
+    }
     if (id !== null && id !== undefined && id !== '') return String(note.character?.id ?? '') === String(id);
     if (name) return String(note.character?.name || '') === String(name);
     return true;
@@ -278,16 +281,21 @@ function countGroups(notes) {
     };
 }
 
-function characterSummaries(notes) {
+function characterSummaries(notes, userName = 'User') {
     const map = new Map();
     for (const note of notes) {
-        const key = [note.character?.id ?? '', note.character?.avatar ?? '', note.character?.name ?? ''].join('|');
+        const storedCharacter = note.character || {};
+        const isUser = note.type === 'user_input' || storedCharacter.isUser === true || storedCharacter.id === 'tavern-notes-user';
+        const character = isUser
+            ? { id: 'tavern-notes-user', name: userName || 'User', avatar: null, isUser: true }
+            : storedCharacter;
+        const key = [character.id ?? '', character.avatar ?? '', character.name ?? ''].join('|');
         if (!map.has(key)) {
             map.set(key, {
-                id: note.character?.id ?? null,
-                name: note.character?.name || '未命名角色',
-                avatar: note.character?.avatar ?? null,
-                isUser: note.character?.isUser === true,
+                id: character.id ?? null,
+                name: character.name || '未命名角色',
+                avatar: character.avatar ?? null,
+                isUser: character.isUser === true,
                 total: 0,
                 userInput: 0,
                 excerpt: 0,
@@ -585,7 +593,7 @@ export async function liteApi(path, options = {}, user = 'default-user', runtime
     }
     if (url.pathname === '/characters' && method === 'GET') {
         const allNotes = await readAllNotes();
-        return { ok: true, characters: characterSummaries(baseFilteredNotes(allNotes, url.searchParams)) };
+        return { ok: true, characters: characterSummaries(baseFilteredNotes(allNotes, url.searchParams), user) };
     }
     if (url.pathname === '/tags' && method === 'GET') {
         const allNotes = await readAllNotes();

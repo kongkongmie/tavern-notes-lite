@@ -54,6 +54,7 @@ const renamed = await storage.liteApi(`/tags/${encodeURIComponent('灵感笔记'
 const renamedNotes = await storage.liteApi(`/notes?tag=${encodeURIComponent('剧情脑洞')}&limit=15&offset=0`);
 const renamedExport = await storage.getLiteExport('smoke-user');
 const characters = await storage.liteApi('/characters');
+const userCharacterNotes = await storage.liteApi('/notes?characterId=tavern-notes-user&limit=30&offset=0');
 const exported = await storage.getLiteExport('smoke-user');
 const info = await storage.getLiteStorageInfo();
 
@@ -66,6 +67,8 @@ const checks = {
     tagSummary: tags.tags.some(tag => tag.name === 'Favorite' && tag.count === 1),
     tagDeletedEverywhere: removedTag.updated === 1 && afterTagDelete.notes.find(note => note.id === 'full-1')?.tags.join(',') === 'plot',
     characterSummary: characters.characters.length === 2 && characters.characters[0].isUser === true && characters.characters.some(character => character.name === 'Alpha'),
+    unifiedUserCharacter: characters.characters.filter(character => character.isUser).length === 1
+        && userCharacterNotes.notes.every(note => note.type === 'user_input' || note.character?.isUser === true),
     consecutiveCollapsed: firstInput.deduplicated === false && repeatedInput.deduplicated === true && repeatedInput.note.repeatCount === 2 && repeatedInput.note.latestMessageId === 11,
     excerptDeduplicated: repeatedExcerpt.deduplicated === true && repeatedExcerpt.note.id === firstExcerpt.note.id,
     breakStopsCollapse: afterBreak.deduplicated === false,

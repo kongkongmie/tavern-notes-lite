@@ -37,6 +37,8 @@ export function createShareCardView({
             bind(query(`#${idPrefix}-share-saved-fonts`), 'change', event => emit('saved-font', event.target.value));
             bind(query(`#${idPrefix}-share-font-size`), 'input', event => emit('settings', { fontScale: Number(event.target.value || 80) / 100 }));
             bind(query(`#${idPrefix}-share-font-import`), 'input', event => emit('font-import-input', event.target.value || ''));
+            bind(query(`#${idPrefix}-share-custom-background`), 'change', event => emit('settings', { background: event.target.value || '#eef7f2' }));
+            bind(query(`#${idPrefix}-share-custom-text-color`), 'change', event => emit('settings', { textColor: event.target.value || '' }));
             bind(query(`#${idPrefix}-share-show-character`), 'change', event => emit('settings', { showCharacter: event.target.checked }));
             bind(query(`#${idPrefix}-share-show-date`), 'change', event => emit('settings', { showDate: event.target.checked }));
             bind(query(`#${idPrefix}-share-import-font`), 'click', () => emit('import-font'));
@@ -70,6 +72,8 @@ export function createShareCardView({
             const value = menu?.querySelector(`#${idPrefix}-share-font-size-value`);
             if (value) value.textContent = `${percent}%`;
             set(`#${idPrefix}-share-font-import`, 'value', settings.fontImport || '');
+            set(`#${idPrefix}-share-custom-background`, 'value', /^#[0-9a-f]{6}$/i.test(settings.background || '') ? settings.background : '#eef7f2');
+            set(`#${idPrefix}-share-custom-text-color`, 'value', /^#[0-9a-f]{6}$/i.test(settings.textColor || '') ? settings.textColor : '#103f25');
             set(`#${idPrefix}-share-show-character`, 'checked', settings.showCharacter);
             set(`#${idPrefix}-share-show-date`, 'checked', settings.showDate);
         },

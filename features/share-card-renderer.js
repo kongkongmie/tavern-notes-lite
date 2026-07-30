@@ -273,6 +273,7 @@ function drawShareCardFooter(ctx, layout) {
         footerY = height - 244,
         avatarSize = 124,
         showMeta = true,
+        showDate = true,
     } = layout;
 
     ctx.save();
@@ -290,7 +291,7 @@ function drawShareCardFooter(ctx, layout) {
     if (showMeta) {
         ctx.fillStyle = textColor;
         ctx.font = `600 28px ${font}`;
-        ctx.fillText(`${userName} · ${t('excerptedAt')} ${dateText}`, left, footerY + 94);
+        ctx.fillText(showDate ? `${userName} · ${t('excerptedAt')} ${dateText}` : userName, left, footerY + 94);
     }
     ctx.fillStyle = muted;
     ctx.font = `600 29px ${font}`;
@@ -349,22 +350,26 @@ async function drawShareCard({
         const right = width - 126;
         let y = 180;
 
-        ctx.textAlign = 'center';
-        ctx.fillStyle = calendarText;
-        ctx.font = `800 164px ${font}`;
-        ctx.fillText(dates.day, width / 2, y + 48);
-        ctx.font = `800 44px ${font}`;
-        ctx.fillText(`${dates.month} ${dates.year}`, width / 2, y + 140);
-        ctx.font = `400 27px ${font}`;
-        ctx.fillStyle = calendarMuted;
-        ctx.fillText(dates.weekday, width / 2, y + 196);
-        ctx.strokeStyle = calendarMuted;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(width / 2 - 56, y + 275);
-        ctx.lineTo(width / 2 + 56, y + 275);
-        ctx.stroke();
-        y += 360;
+        if (settings.showDate) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = calendarText;
+            ctx.font = `800 164px ${font}`;
+            ctx.fillText(dates.day, width / 2, y + 48);
+            ctx.font = `800 44px ${font}`;
+            ctx.fillText(`${dates.month} ${dates.year}`, width / 2, y + 140);
+            ctx.font = `400 27px ${font}`;
+            ctx.fillStyle = calendarMuted;
+            ctx.fillText(dates.weekday, width / 2, y + 196);
+            ctx.strokeStyle = calendarMuted;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(width / 2 - 56, y + 275);
+            ctx.lineTo(width / 2 + 56, y + 275);
+            ctx.stroke();
+            y += 360;
+        } else {
+            y = 260;
+        }
 
         ctx.textAlign = 'left';
         ctx.fillStyle = calendarText;
@@ -426,8 +431,10 @@ async function drawShareCard({
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(userName, left, 324);
-        ctx.font = `600 ${s(31)}px ${readFont}`;
-        ctx.fillText(`${t('excerptedAt')} ${dates.full}`, left, 390);
+        if (settings.showDate) {
+            ctx.font = `600 ${s(31)}px ${readFont}`;
+            ctx.fillText(`${t('excerptedAt')} ${dates.full}`, left, 390);
+        }
 
         const footerY = 1154;
         ctx.font = `400 ${s(46)}px ${readFont}`;
@@ -436,7 +443,9 @@ async function drawShareCard({
 
         ctx.fillStyle = muted;
         ctx.font = `400 ${s(29)}px ${readFont}`;
-        drawMultiline(ctx, wrapCanvasText(ctx, shareCardSourceLine(note, character), right - left), left, 1040, s(44), 1);
+        if (settings.showCharacter) {
+            drawMultiline(ctx, wrapCanvasText(ctx, shareCardSourceLine(note, character), right - left), left, 1040, s(44), 1);
+        }
 
         drawShareCardFooter(ctx, { translate,
             width,
@@ -463,19 +472,23 @@ async function drawShareCard({
         const sourceY = 1088;
         const footerY = 1132;
         ctx.save();
-        drawShareTitle(ctx, character, left, 196 + mobaiOffsetY, {
-            font: readFont,
-            color: textColor,
-            maxWidth: 360,
-            largeSize: s(64),
-            smallSize: s(36),
-            verticalLine: false,
-            lineColor,
-        });
+        if (settings.showCharacter) {
+            drawShareTitle(ctx, character, left, 196 + mobaiOffsetY, {
+                font: readFont,
+                color: textColor,
+                maxWidth: 360,
+                largeSize: s(64),
+                smallSize: s(36),
+                verticalLine: false,
+                lineColor,
+            });
+        }
 
         ctx.fillStyle = muted;
         ctx.font = `400 ${s(25)}px ${readFont}`;
-        drawVerticalText(ctx, dates.verticalZh, right - 34, 142 + mobaiOffsetY, s(36), { lineLeft: 28, lineRight: 28, lineColor });
+        if (settings.showDate) {
+            drawVerticalText(ctx, dates.verticalZh, right - 34, 142 + mobaiOffsetY, s(36), { lineLeft: 28, lineRight: 28, lineColor });
+        }
         drawMobaiUserColumn(ctx, `${userName}·${t('excerptedAt')}`, right - 126, 166 + mobaiOffsetY, s(25), readFont, muted, lineColor);
         ctx.restore();
 
@@ -488,7 +501,7 @@ async function drawShareCard({
 
         ctx.fillStyle = muted;
         ctx.font = `400 ${s(29)}px ${readFont}`;
-        ctx.fillText(shareCardSourceLine(note, character), left, sourceY);
+        if (settings.showCharacter) ctx.fillText(shareCardSourceLine(note, character), left, sourceY);
 
         drawShareCardFooter(ctx, { translate,
             width,
@@ -519,26 +532,28 @@ async function drawShareCard({
         return canvas;
     }
 
-    drawShareTitle(ctx, character, left, 300, {
-        font: readFont,
-        color: textColor,
-        maxWidth: 420,
-        largeSize: s(76),
-        smallSize: s(42),
-        verticalLine: false,
-        lineColor,
-    });
+    if (settings.showCharacter) {
+        drawShareTitle(ctx, character, left, 300, {
+            font: readFont,
+            color: textColor,
+            maxWidth: 420,
+            largeSize: s(76),
+            smallSize: s(42),
+            verticalLine: false,
+            lineColor,
+        });
+    }
 
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = textColor;
     ctx.font = `400 ${s(42)}px ${readFont}`;
     const lines = wrapCanvasText(ctx, content, right - left);
-    drawMultilineFit(ctx, lines, left, 560, s(78), 1054);
+    drawMultilineFit(ctx, lines, left, settings.showCharacter ? 560 : 300, s(78), 1054);
 
     ctx.fillStyle = muted;
     ctx.font = `400 ${s(30)}px ${readFont}`;
-    ctx.fillText(shareCardSourceLine(note, character), left, 1100);
+    if (settings.showCharacter) ctx.fillText(shareCardSourceLine(note, character), left, 1100);
 
     drawShareCardFooter(ctx, { translate,
         width,
@@ -554,6 +569,7 @@ async function drawShareCard({
         left,
         right,
         footerY: 1162,
+        showDate: settings.showDate,
     });
     return canvas;
 }

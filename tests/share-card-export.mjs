@@ -10,6 +10,8 @@ const drawShareCardSource = rendererSource.slice(
 );
 assert.equal((drawShareCardSource.match(/return canvas;/g) || []).length, 4);
 assert.doesNotMatch(drawShareCardSource, /^\s*return;\s*$/m);
+assert.ok((drawShareCardSource.match(/settings\.showCharacter/g) || []).length >= 6);
+assert.ok((drawShareCardSource.match(/settings\.showDate/g) || []).length >= 4);
 
 const direct = await canvasToBlob({
     toBlob(callback) {

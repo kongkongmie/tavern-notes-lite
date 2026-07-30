@@ -26,6 +26,9 @@ export function renderAppShellMarkup({
     const storageModeAction = capabilities.storageMode
         ? `<button id="${idPrefix}-storage-mode-open" class="${ui('soft-button')}" title="${htmlEscape(t('chooseStorageMode'))}"><i class="fa-solid fa-database"></i><span>${htmlEscape(t('chooseStorageMode'))}</span></button>`
         : '';
+    const subtitleMarkup = storageModeBadge
+        ? `<div class="${ui('subtitle')}">${storageModeBadge}</div>`
+        : '';
     const compatibilityInfo = capabilities.compatibilityInfo
         ? `<aside class="${classPrefix}-lite-full-info">
                         <strong><i class="fa-solid fa-circle-info"></i>${htmlEscape(t('liteFullInfoTitle'))}</strong>
@@ -40,7 +43,7 @@ export function renderAppShellMarkup({
                 <div class="${ui('brand-mark')}">${brandIconMarkup}</div>
                 <div class="${ui('heading')}">
                     <div class="${ui('title')}">${htmlEscape(t('appName'))} <span>@KKM</span><button id="${idPrefix}-update-indicator" class="${ui('update-indicator')} ${ui('hidden')}" type="button" title="${htmlEscape(t('viewUpdate'))}" aria-label="${htmlEscape(t('viewUpdate'))}"><i></i><span data-update-indicator-version></span></button></div>
-                    <div class="${ui('subtitle')}">${htmlEscape(t('subtitle'))}${storageModeBadge}</div>
+                    ${subtitleMarkup}
                 </div>
                 <div class="${ui('window-actions')}">
                     <button id="${idPrefix}-launcher-mode" class="${ui('soft-button')} ${ui('window-soft-button')}" title="${htmlEscape(t('switchLauncherMode'))}" aria-label="${htmlEscape(t('switchLauncherMode'))}">
@@ -65,6 +68,7 @@ export function renderAppShellMarkup({
                     <div id="${idPrefix}-more-menu" class="${ui('header-popover')} ${ui('header-secondary')}"><button id="${idPrefix}-auto-user-input" class="${ui('soft-button')} ${state.autoCaptureUserInput ? 'active' : ''}" title="${htmlEscape(t('autoCaptureUserInputTitle'))}"><i class="fa-solid fa-keyboard"></i><span>${htmlEscape(t('autoCaptureUserInput'))}</span></button><button id="${idPrefix}-user-input-cleanup-open" class="${ui('soft-button')}" title="${htmlEscape(t('userInputCleanupIntro'))}"><i class="fa-solid fa-filter-circle-xmark"></i><span>${htmlEscape(t('userInputCleanup'))}</span></button><button id="${idPrefix}-export" class="${ui('soft-button')}" title="${htmlEscape(t('exportNotes'))}"><i class="fa-solid fa-download"></i><span>${htmlEscape(t('exportNotes'))}</span></button>${storageModeAction}<button id="${idPrefix}-update-open" class="${ui('soft-button')}" title="${htmlEscape(t('updateCenter'))}"><i class="fa-solid fa-clock-rotate-left"></i><span>${htmlEscape(t('updateCenter'))}</span></button><button id="${idPrefix}-reset-floating" class="${ui('soft-button')}" title="${htmlEscape(t('resetFloatingPosition'))}"><i class="fa-solid fa-location-crosshairs"></i><span>${htmlEscape(t('resetFloatingPosition'))}</span></button><button id="${idPrefix}-apple-mode-main" class="${ui('soft-button')} ${ui('hidden')}"><i class="fa-solid fa-moon"></i><span>${htmlEscape(t('appleThemeNight'))}</span></button></div>
                 </div>
             </header>
+            <div id="${idPrefix}-notice" class="${ui('notice')}" role="status" aria-live="polite"></div>
             <div class="${ui('search-row')}">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input id="${idPrefix}-search" class="text_pole" type="search" placeholder="${htmlEscape(t('searchPlaceholder'))}" />
@@ -274,6 +278,10 @@ export function renderAppShellMarkup({
                         <label class="${classPrefix}-share-label">${htmlEscape(t('background'))}</label>
                         <div class="${classPrefix}-share-bg-row">
                             ${shareCardBackgrounds.map(color => `<button class="${ui('share-bg')}" data-share-bg="${color}" type="button" style="--share-bg:${color}"></button>`).join('')}
+                        </div>
+                        <div class="${classPrefix}-share-custom-color-row">
+                            <label><span>${htmlEscape(t('customBackground'))}</span><input id="${idPrefix}-share-custom-background" type="color" value="#eef7f2" /></label>
+                            <label><span>${htmlEscape(t('customTextColor'))}</span><input id="${idPrefix}-share-custom-text-color" type="color" value="#103f25" /></label>
                         </div>
                         <label class="${classPrefix}-share-label">${htmlEscape(t('display'))}</label>
                         <div class="${classPrefix}-share-toggle-row">
