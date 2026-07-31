@@ -1845,7 +1845,7 @@ const tagView = createTagView({
 });
 const captureView = createCaptureView({
     classPrefix: 'tnl',
-    selectors: { selectionButton: '#tavern-notes-lite-selection-capture', selectionClass: 'tnl-selection-capture', floorButton: '.tn-floor-capture', chat: '#chat', messages: '#chat .mes, .mes[mesid], .mes[data-mesid]', message: '.mes' },
+    selectors: { selectionButton: '#tavern-notes-lite-selection-capture', selectionClass: 'tnl-selection-capture', floorButton: '.tn-floor-capture', chat: '#chat', messages: '.mes, [mesid], [data-mesid]', message: '.mes, [mesid], [data-mesid]' },
     translate: t,
     escapeHtml: htmlEscape,
     isSelectionEnabled: () => state.showSelectionCaptureButton,
@@ -2652,7 +2652,11 @@ function toggleHeaderPopover(id) {
 }
 
 function getMessageIdFromElement(messageElement) {
-    const raw = messageElement?.getAttribute?.('mesid') || messageElement?.dataset?.mesid;
+    const carrier = messageElement?.matches?.('[mesid], [data-mesid]')
+        ? messageElement
+        : messageElement?.closest?.('[mesid], [data-mesid]')
+            || messageElement?.querySelector?.('[mesid], [data-mesid]');
+    const raw = carrier?.getAttribute?.('mesid') ?? carrier?.dataset?.mesid;
     if (raw === undefined || raw === null || raw === '') return null;
     const numeric = Number(raw);
     return Number.isFinite(numeric) ? numeric : raw;

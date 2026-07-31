@@ -141,7 +141,9 @@ export function createCaptureView({
         timer = setTimeout(updateSelectionButton, 80);
     }
 
-    function ensureFloorButton(message) {
+    function ensureFloorButton(candidate) {
+        const message = candidate?.closest?.('.mes') || candidate;
+        if (!message?.querySelector) return;
         if (!isFloorEnabled() || message.querySelector(`:scope > ${selectors.floorButton}`)) return;
         const button = documentRef.createElement('button');
         button.type = 'button';
@@ -161,8 +163,10 @@ export function createCaptureView({
             documentRef.querySelectorAll(selectors.floorButton).forEach(button => button.remove());
             return;
         }
-        if (root?.matches?.(selectors.message)) ensureFloorButton(root);
-        root.querySelectorAll?.(selectors.messages).forEach(ensureFloorButton);
+        const messages = new Set();
+        if (root?.matches?.(selectors.message)) messages.add(root);
+        root.querySelectorAll?.(selectors.messages || selectors.message).forEach(message => messages.add(message));
+        messages.forEach(ensureFloorButton);
     }
 
     function mount() {
@@ -174,14 +178,14 @@ export function createCaptureView({
         documentRef.addEventListener('scroll', hideSelectionButton, { capture: true, signal: abortController.signal });
         windowRef.addEventListener('resize', hideSelectionButton, { signal: abortController.signal });
         refreshFloorButtons();
-        const observationRoot = documentRef.querySelector(selectors.chat) || documentRef.body;
+        // Observe the stable page body because SillyTavern may replace #chat.
+        const observationRoot = documentRef.body || documentRef.querySelector(selectors.chat);
         if (observationRoot) {
             observer = new MutationObserver(records => {
                 if (!mounted) return;
                 records.forEach(record => record.addedNodes.forEach(node => {
-                    if (!(node instanceof Element)) return;
-                    if (node.matches?.(selectors.message)) ensureFloorButton(node);
-                    node.querySelectorAll?.(selectors.message).forEach(ensureFloorButton);
+                    if (![1, 11].includes(node?.nodeType)) return;
+                    refreshFloorButtons(node);
                 }));
             });
             observer.observe(observationRoot, { childList: true, subtree: true });
