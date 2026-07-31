@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Persisted the last backup-reminder time so page reloads and restarts do not repeat the same storage-size notice for 30 days.
+- Kept reminders active when a backup is genuinely overdue or storage remains large after the cooldown.
+
 ## 0.2.0
 
 - Introduced shared note-card, theme-runtime, and update-center modules aligned with Tavern Notes Full while preserving the existing Lite repository, install path, and IndexedDB storage.

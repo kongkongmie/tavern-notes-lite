@@ -19,7 +19,8 @@ for (const source of [tagController, captureController, userCapture, maintenance
 }
 assert.doesNotMatch(tagView, /repository|storageMode/);
 assert.doesNotMatch(captureController, /noteRepository|\/notes|fetch\(|storageMode/);
-assert.match(captureView, /querySelector\(selectors\.chat\) \|\| documentRef\.body/, 'floor capture must survive a chat root mounted after the extension');
+assert.match(captureView, /documentRef\.body \|\| documentRef\.querySelector\(selectors\.chat\)/, 'floor capture must survive complete chat-root replacement');
+assert.match(captureView, /\[1, 11\]\.includes\(node\?\.nodeType\)/, 'floor capture must handle messages inserted through a DocumentFragment');
 assert.match(tagView, /state\.recentTags\.forEach\(name => append\(\{ name, count: 0 \}\)\)/, 'empty remembered tags must survive note deletion');
 assert.doesNotMatch(userCapture, /user-input-dedupe|noteRepository|storageMode/);
 assert.doesNotMatch(maintenanceController, /querySelector|deleteNotes|storageMode/);

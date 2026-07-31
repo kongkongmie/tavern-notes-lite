@@ -3,7 +3,7 @@ const DB_VERSION = 1;
 const NOTE_STORE = 'notes';
 const META_STORE = 'meta';
 const MAX_CONTENT_LENGTH = 200000;
-const LITE_VERSION = '0.2.0';
+const LITE_VERSION = '0.2.1';
 
 let databasePromise = null;
 
@@ -491,6 +491,10 @@ export async function markLiteExported() {
     await writeMeta('lastExportAt', new Date().toISOString());
 }
 
+export async function markLiteBackupReminderShown() {
+    await writeMeta('lastBackupReminderAt', new Date().toISOString());
+}
+
 export async function importLiteExport(payload) {
     if (!payload || payload.format !== 'tavern-notes-export' || !Array.isArray(payload.notes)) {
         throw new Error('This is not a Tavern Notes JSON backup.');
@@ -540,6 +544,7 @@ export async function getLiteStorageInfo() {
     const notes = await getAllLiteNotes();
     const approximateBytes = new Blob([JSON.stringify(notes)]).size;
     const lastExportAt = await readMeta('lastExportAt', '');
+    const lastReminderAt = await readMeta('lastBackupReminderAt', '');
     let browserUsage = null;
     let browserQuota = null;
     try {
@@ -549,7 +554,7 @@ export async function getLiteStorageInfo() {
     } catch {
         // The extension still has its own approximate size when browser estimates are unavailable.
     }
-    return { count: notes.length, approximateBytes, lastExportAt, browserUsage, browserQuota };
+    return { count: notes.length, approximateBytes, lastExportAt, lastReminderAt, browserUsage, browserQuota };
 }
 
 export async function liteApi(path, options = {}, user = 'default-user', runtimeVersion = LITE_VERSION) {

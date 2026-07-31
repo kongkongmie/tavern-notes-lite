@@ -76,13 +76,14 @@ import {
     getLiteStorageInfo,
     importLiteExport,
     liteApi,
+    markLiteBackupReminderShown,
     markLiteExported,
     openLiteDatabase,
 } from './storage.js';
 
 const SETTINGS_KEY = 'tavern-notes-lite-settings';
 const UPDATE_NOTICE_KEY = 'tavern-notes-lite-update-notice';
-const EXTENSION_VERSION = '0.2.0';
+const EXTENSION_VERSION = '0.2.1';
 const REMOTE_MANIFEST_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/manifest.json';
 const REMOTE_CHANGELOG_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/CHANGELOG.md';
 const REMOTE_CHANGELOG_ANNOTATION_URL = 'https://raw.githubusercontent.com/kongkongmie/tavern-notes-lite/main/CHANGELOG.zh-CN.md';
@@ -2018,7 +2019,10 @@ const systemStatusController = createSystemStatusController({
     view: systemStatusView,
     capabilities: { backendStatus: false, installGuide: false, storageModeSwitch: false, storageQuota: true },
     formatStatus: status => t('liteStorageStatus', { size: formatBytes(status.approximateBytes), count: status.totalNotes }),
-    notifyReminder: status => notify(t('liteBackupReminder', { size: formatBytes(status.approximateBytes) }), 'info'),
+    notifyReminder: async status => {
+        notify(t('liteBackupReminder', { size: formatBytes(status.approximateBytes) }), 'info');
+        await markLiteBackupReminderShown();
+    },
     reminderOptions: { storageNoticeBytes: STORAGE_NOTICE_BYTES, backupNoticeDays: BACKUP_NOTICE_DAYS },
     onStatus: status => { if (status.user) updateSettings({ currentUserName: status.user }); },
 });

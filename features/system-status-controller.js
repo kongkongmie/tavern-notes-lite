@@ -13,7 +13,7 @@ export function createSystemStatusController({ repository, view, capabilities, f
             lastStatus = status;
             onStatus(status);
             view.renderStatus?.(formatStatus(status));
-            if (capabilities.storageQuota && showReminder && shouldShowBackupReminder(status, reminderOptions)) notifyReminder(status);
+            if (capabilities.storageQuota && showReminder && shouldShowBackupReminder(status, reminderOptions)) await notifyReminder(status);
             return status;
         } catch (error) {
             if (mounted && request === generation) onError(error, capabilities);

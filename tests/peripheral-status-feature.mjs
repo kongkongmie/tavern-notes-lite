@@ -13,6 +13,7 @@ assert.equal(sanitizeFontCss('@font-face { font-family:X; src:url(x) } script{}'
 assert.equal(rememberFont([], { type: 'local', name: 'A' }, 1)[0].id, 'local:A:1');
 assert.equal(shouldShowBackupReminder({ count: 50, approximateBytes: 1, lastExportAt: '' }, { now: 1 }), true);
 assert.equal(shouldShowBackupReminder({ count: 1, approximateBytes: 1 }, { now: 1 }), false);
+assert.equal(shouldShowBackupReminder({ count: 50, approximateBytes: 30 * 1024 * 1024, lastReminderAt: '2026-07-30T00:00:00.000Z' }, { now: Date.parse('2026-07-31T00:00:00.000Z') }), false);
 
 let updateResolvers = [];
 let updateRenders = [];

@@ -17,7 +17,7 @@ localImports.forEach(relativePath => {
     assert.ok(fs.existsSync(path.resolve(root, relativePath)), `Missing imported release file: ${relativePath}`);
 });
 
-assert.equal(manifest.version, '0.2.0');
+assert.equal(manifest.version, '0.2.1');
 assert.equal(manifest.homePage, 'https://github.com/kongkongmie/tavern-notes-lite');
 assert.equal(manifest.auto_update, true);
 console.log('Lite release package static test passed.');
