@@ -2,7 +2,7 @@ export function shouldShowBackupReminder(info, {
     now = Date.now(),
     storageNoticeBytes = 20 * 1024 * 1024,
     backupNoticeDays = 30,
-    minimumNotes = 50,
+    minimumNotes = 500,
 } = {}) {
     const noteCount = Number(info?.count ?? info?.totalNotes ?? 0);
     if (!noteCount) return false;

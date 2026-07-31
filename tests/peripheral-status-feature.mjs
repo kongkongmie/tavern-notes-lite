@@ -11,9 +11,9 @@ assert.equal(compareVersions('1.10.0', '1.9.9'), 1);
 assert.equal(parseChangelog('## 1.2.0\n- A\n## 1.1.0\n- B').length, 2);
 assert.equal(sanitizeFontCss('@font-face { font-family:X; src:url(x) } script{}').includes('script'), false);
 assert.equal(rememberFont([], { type: 'local', name: 'A' }, 1)[0].id, 'local:A:1');
-assert.equal(shouldShowBackupReminder({ count: 50, approximateBytes: 1, lastExportAt: '' }, { now: 1 }), true);
+assert.equal(shouldShowBackupReminder({ count: 500, approximateBytes: 1, lastExportAt: '' }, { now: 1 }), true);
 assert.equal(shouldShowBackupReminder({ count: 1, approximateBytes: 1 }, { now: 1 }), false);
-assert.equal(shouldShowBackupReminder({ count: 50, approximateBytes: 30 * 1024 * 1024, lastReminderAt: '2026-07-30T00:00:00.000Z' }, { now: Date.parse('2026-07-31T00:00:00.000Z') }), false);
+assert.equal(shouldShowBackupReminder({ count: 500, approximateBytes: 30 * 1024 * 1024, lastReminderAt: '2026-07-30T00:00:00.000Z' }, { now: Date.parse('2026-07-31T00:00:00.000Z') }), false);
 
 let updateResolvers = [];
 let updateRenders = [];
