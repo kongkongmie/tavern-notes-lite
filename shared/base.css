@@ -184,6 +184,13 @@
     border-color: #d85b65;
 }
 
+.tn-notice[data-kind="success"] {
+    border-color: #35a765;
+    color: #145c35;
+    background: #e7f8ee;
+    box-shadow: 0 8px 24px rgba(26, 125, 72, 0.24);
+}
+
 :is(.tn-share-custom-color-row, .tnl-share-custom-color-row) {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
