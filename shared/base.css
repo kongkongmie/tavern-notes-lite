@@ -792,21 +792,68 @@
         display: none !important;
     }
 
-    :is(#tavern-notes-panel, #tavern-notes-lite-panel).tn-reading-mode .tn-header::after {
-        content: "⌄";
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel) .tn-reading-mode-expand {
+        display: none;
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel).tn-reading-mode .tn-reading-mode-expand {
         position: absolute;
-        top: 5px;
+        z-index: 2;
+        top: 7px;
         left: 50%;
-        color: var(--tn-muted, var(--tnl-muted, #777));
-        font-size: 24px;
-        line-height: 32px;
-        opacity: 0.72;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 138px;
+        height: 34px;
+        padding: 0 17px;
+        gap: 8px;
+        border: 1px solid color-mix(in srgb, var(--tn-quote, var(--tnl-quote, #4ca6c8)) 42%, transparent);
+        border-radius: 999px;
+        color: var(--tn-quote, var(--tnl-quote, #4ca6c8));
+        background:
+            linear-gradient(135deg,
+                color-mix(in srgb, var(--tn-paper-2, var(--tnl-paper-2, #fff)) 88%, transparent),
+                color-mix(in srgb, var(--tn-quote, var(--tnl-quote, #4ca6c8)) 14%, transparent));
+        box-shadow:
+            0 7px 20px color-mix(in srgb, var(--tn-quote, var(--tnl-quote, #4ca6c8)) 18%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 750;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
         transform: translateX(-50%);
-        pointer-events: none;
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel).tn-reading-mode .tn-reading-mode-expand i {
+        font-size: 12px;
+        animation: tn-reading-expand-hint 1.8s ease-in-out infinite;
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel).tn-reading-mode .tn-reading-mode-expand:hover {
+        filter: brightness(1.08);
+        box-shadow:
+            0 9px 24px color-mix(in srgb, var(--tn-quote, var(--tnl-quote, #4ca6c8)) 26%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        transform: translateX(-50%) translateY(-1px);
+    }
+
+    :is(#tavern-notes-panel, #tavern-notes-lite-panel).tn-reading-mode .tn-reading-mode-expand:active {
+        transform: translateX(-50%) translateY(1px) scale(0.98);
     }
 
     :is(#tavern-notes-panel, #tavern-notes-lite-panel).tn-reading-mode .tn-shell {
         gap: 0;
         padding-top: 4px;
     }
+}
+
+@keyframes tn-reading-expand-hint {
+    0%, 100% { transform: translateY(-1px); }
+    50% { transform: translateY(2px); }
 }

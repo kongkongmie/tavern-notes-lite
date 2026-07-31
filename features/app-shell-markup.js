@@ -60,6 +60,9 @@ export function renderAppShellMarkup({
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
+                <button class="${ui('reading-mode-expand')}" type="button" title="${htmlEscape(t('expandToolbar'))}" aria-label="${htmlEscape(t('expandToolbar'))}">
+                    <i class="fa-solid fa-chevron-down"></i><span>${htmlEscape(t('expandToolbar'))}</span>
+                </button>
                 <div class="${ui('header-actions')}">
                     <button id="${idPrefix}-new-note-open" class="${ui('soft-button')}" title="${htmlEscape(t('newNote'))}" aria-label="${htmlEscape(t('newNote'))}"><i class="fa-solid fa-pen-to-square"></i><span>${htmlEscape(t('newNote'))}</span></button>
                     <button id="${idPrefix}-selection-capture-setting" class="${ui('soft-button')} ${state.showSelectionCaptureButton ? 'active' : ''}" title="${htmlEscape(t('selectionCaptureButtonTitle'))}"><i class="fa-solid fa-highlighter"></i><span>${htmlEscape(t('captureSelected'))}</span></button>
